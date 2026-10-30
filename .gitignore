@@ -1,0 +1,6 @@
+# Archivos que crea Windows y no hacen falta en el repositorio
+Thumbs.db
+desktop.ini
+
+# Fotos de los artículos que se suben desde Stock (son datos, como la base de datos)
+fotos/

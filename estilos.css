@@ -1,0 +1,1051 @@
+/* ESTILOS DE TODAS LAS PÁGINAS DE KORE SYSTEM
+   Los colores están en :root (abajo). Para cambiar uno, cámbialo solo ahí. */
+
+/* Letra Geist de Google Fonts (si no hay internet se usa Segoe UI o Arial) */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap");
+
+:root {
+    --principal: #BD2E73;          /* rosa del logo */
+    --principal-oscuro: #932069;   /* parte de abajo del logo */
+    --principal-claro: #DE427C;    /* parte de arriba del logo */
+    --principal-fondo: #FBEAF2;    /* rosa muy clarito para fondos */
+    --verde: #2E8B57;
+    --verde-oscuro: #256F46;
+    --verde-fondo: #EAF5EE;
+    --amarillo: #B5690B;
+    --amarillo-fondo: #FDF3E4;
+    --rojo: #C0262D;
+    --texto: #2A1F24;
+    --gris: #7A6E73;
+    --borde: #ECE4E8;
+    --fondo-gris: #F7F4F5;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* Lo que tiene el atributo hidden nunca se ve */
+[hidden] {
+    display: none !important;
+}
+
+body {
+    margin: 0;
+    font-family: "Geist", "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    background-color: #FFFFFF;
+    color: var(--texto);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p {
+    margin: 0;
+}
+
+/* Ancho máximo del contenido, centrado */
+.contenedor {
+    max-width: 1024px;
+    margin: 0 auto;
+}
+
+/* ENCABEZADO */
+header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid var(--borde);
+}
+
+.encabezado {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.logo {
+    width: 44px;
+    height: 44px;
+    padding: 4px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background-color: #FFFFFF;
+    object-fit: contain;
+}
+
+header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--principal);
+}
+
+header p {
+    font-size: 12px;
+    color: var(--gris);
+}
+
+/* CONTENIDO: cada bloque queda separado 16px del siguiente */
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 12px 110px 12px;
+}
+
+@media (min-width: 640px) {
+    main {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
+
+/* MENÚ DE ABAJO */
+.menu {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid var(--borde);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.menu .contenedor {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 8px;
+}
+
+.menu a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gris);
+    text-decoration: none;
+}
+
+.menu a span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 64px;
+    height: 36px;
+    border-radius: 999px;
+}
+
+.menu a:hover {
+    color: var(--texto);
+}
+
+.menu a.activo {
+    color: var(--principal);
+}
+
+.menu a.activo span {
+    background-color: var(--principal-fondo);
+}
+
+/* ÍCONOS */
+.icono {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.menu .icono {
+    width: 20px;
+    height: 20px;
+}
+
+/* Círculo de color donde va un ícono */
+.circulo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--principal-fondo);
+    color: var(--principal);
+}
+
+.circulo.grande {
+    width: 36px;
+    height: 36px;
+}
+
+.circulo.grande .icono {
+    width: 20px;
+    height: 20px;
+}
+
+.circulo.enorme {
+    width: 48px;
+    height: 48px;
+}
+
+.circulo.enorme .icono {
+    width: 24px;
+    height: 24px;
+}
+
+.circulo.verde {
+    background-color: var(--verde-fondo);
+    color: var(--verde);
+}
+
+.circulo.amarillo {
+    background-color: var(--amarillo-fondo);
+    color: var(--amarillo);
+}
+
+.circulo.gris {
+    background-color: var(--fondo-gris);
+    color: var(--principal-oscuro);
+}
+
+/* TÍTULOS DE CADA SECCIÓN (Stock, Ventas, Deudas...) */
+.titulo-seccion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.titulo-con-icono {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.titulo-con-icono h2 {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+/* TARJETAS */
+.tarjeta {
+    padding: 20px;
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    background-color: #FFFFFF;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.tarjeta.chica {
+    padding: 12px;
+}
+
+.tarjeta-titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tarjeta-encabezado {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.tarjeta-encabezado .tarjeta-titulo {
+    margin-bottom: 0;
+}
+
+.guardado {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--verde);
+}
+
+/* MI DINERO ACTUAL (con el degradado del logo) */
+.saldo {
+    padding: 20px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--principal-claro), var(--principal-oscuro));
+    color: #FFFFFF;
+    box-shadow: 0 8px 20px rgba(189, 46, 115, 0.25);
+}
+
+.saldo-titulo {
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.85;
+}
+
+.saldo-cantidad {
+    margin-top: 8px;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.saldo-nota {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+/* COLUMNAS */
+.dos-columnas {
+    display: grid;
+    gap: 16px;
+}
+
+.dos-campos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.tres-campos {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+/* Cuadritos de totales arriba de las listas */
+.resumen {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.resumen.tres {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+@media (min-width: 640px) {
+    .dos-columnas {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .resumen {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .resumen.tres {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+}
+
+/* TEXTOS */
+.gris {
+    color: var(--gris);
+}
+
+.chico {
+    font-size: 12px;
+}
+
+.negrita {
+    font-weight: 600;
+}
+
+.numero {
+    margin-top: 2px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.texto-verde {
+    color: var(--verde);
+}
+
+.texto-rosa {
+    color: var(--principal);
+}
+
+.texto-amarillo {
+    color: var(--amarillo);
+}
+
+.texto-error {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--rojo);
+}
+
+.derecha {
+    text-align: right;
+}
+
+.cortar {
+    overflow-wrap: anywhere;
+}
+
+.vacio {
+    padding: 32px 0;
+    text-align: center;
+    font-size: 14px;
+    color: var(--gris);
+}
+
+/* FORMULARIOS */
+label {
+    display: block;
+    margin: 14px 0 6px 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    height: 38px;
+    padding: 6px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background-color: #FFFFFF;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--texto);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+textarea {
+    height: auto;
+    min-height: 180px;
+    padding: 10px 12px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--principal);
+    box-shadow: 0 0 0 3px rgba(189, 46, 115, 0.18);
+}
+
+/* Selector chico (el de los días del Historial) */
+.select-chico {
+    width: 170px;
+    height: 32px;
+    padding: 4px 8px;
+    font-size: 14px;
+}
+
+/* Campo de dinero con el signo $ adentro */
+.campo-dinero {
+    position: relative;
+}
+
+.campo-dinero span {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gris);
+}
+
+.campo-dinero input {
+    padding-left: 26px;
+}
+
+.campo-dinero.grande input {
+    height: 48px;
+    font-size: 18px;
+}
+
+/* BOTONES */
+.boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--principal);
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.boton:hover {
+    background-color: var(--principal-oscuro);
+}
+
+.boton-grande {
+    height: 40px;
+}
+
+.boton-ancho {
+    width: 100%;
+}
+
+.boton-verde {
+    background-color: var(--verde);
+}
+
+.boton-verde:hover {
+    background-color: var(--verde-oscuro);
+}
+
+.boton-borde {
+    border: 1px solid var(--borde);
+    background-color: #FFFFFF;
+    color: var(--texto);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.boton-borde:hover {
+    background-color: var(--fondo-gris);
+}
+
+.boton-fantasma {
+    align-self: flex-start;
+    background-color: transparent;
+    color: var(--gris);
+}
+
+.boton-fantasma:hover {
+    background-color: var(--fondo-gris);
+    color: var(--texto);
+}
+
+/* Botón chiquito que solo tiene un ícono (editar, borrar) */
+.boton-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background-color: transparent;
+    color: var(--texto);
+    cursor: pointer;
+}
+
+.boton-icono:hover {
+    background-color: var(--fondo-gris);
+}
+
+.boton-icono.rosa {
+    color: var(--principal);
+}
+
+/* Los formularios de "borrar" van junto a otros botones */
+.en-linea {
+    display: inline;
+    margin: 0;
+}
+
+/* ETIQUETAS (Contado, Pendiente, Pagada...) */
+.etiqueta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.etiqueta.verde {
+    color: var(--verde);
+}
+
+.etiqueta.amarillo {
+    color: var(--amarillo);
+}
+
+.etiqueta.pagada {
+    border-color: transparent;
+    background-color: var(--fondo-gris);
+    color: var(--verde);
+}
+
+.etiqueta.pendiente {
+    border-color: #F1D7AF;
+    background-color: var(--amarillo-fondo);
+    color: var(--amarillo);
+}
+
+/* LISTAS DE HISTORIAL */
+.lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.lista li {
+    padding: 10px 12px;
+    border-radius: 10px;
+}
+
+.fondo-verde {
+    background-color: var(--verde-fondo);
+}
+
+.fondo-rosa {
+    background-color: var(--principal-fondo);
+}
+
+.fondo-amarillo {
+    background-color: var(--amarillo-fondo);
+}
+
+.renglon {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.lista-titulo {
+    font-size: 14px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.lista-fecha {
+    font-size: 12px;
+    color: var(--gris);
+    white-space: nowrap;
+}
+
+.cantidad {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.etiquetas {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.detalle-deuda {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 12px;
+}
+
+/* PESTAÑAS DE VENTAS */
+.pestanas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 10px;
+    background-color: var(--fondo-gris);
+}
+
+@media (min-width: 640px) {
+    .pestanas {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.pestanas a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--texto);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.pestanas a.activa {
+    background-color: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* REGISTRAR VENTA */
+.opcion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    text-align: center;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s;
+}
+
+.opcion:hover {
+    border-color: var(--principal);
+}
+
+.caja-producto {
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background-color: #FBF9FA;
+}
+
+.mini {
+    margin-top: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background-color: #FFFFFF;
+    font-size: 14px;
+}
+
+.mini p:first-child {
+    font-size: 11px;
+    color: var(--gris);
+}
+
+/* STOCK: tarjeta de cada artículo (en celular) */
+.articulo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.boton-editar {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    z-index: 1;
+    border: 1px solid var(--borde);
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.articulo-foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 176px;
+    padding: 12px;
+    border-radius: 16px;
+    background-color: #FAF8F9;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.articulo-foto img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+@media (min-width: 640px) {
+    .articulo-foto {
+        height: 208px;
+    }
+}
+
+.datos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    max-width: 448px;
+    margin: 0 auto;
+}
+
+.nombre-dato {
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Cuadrito que muestra un dato (parece campo, pero no se puede escribir) */
+.dato {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 8px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.dato.derecha {
+    justify-content: flex-end;
+}
+
+.renglon-gris {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background-color: var(--fondo-gris);
+    font-size: 14px;
+}
+
+/* TABLAS (en computadora) */
+.tabla-caja {
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    background-color: #FFFFFF;
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--borde);
+    background-color: #FAF8F9;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+
+td {
+    padding: 8px;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: middle;
+}
+
+tfoot td {
+    border-bottom: none;
+    background-color: var(--fondo-gris);
+    font-weight: 700;
+}
+
+.miniatura {
+    width: 40px;
+    height: 40px;
+    padding: 2px;
+    border-radius: 6px;
+    background-color: #FAF8F9;
+    object-fit: contain;
+}
+
+.celda-flex {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* En celular se ven tarjetas y en computadora (1024px o más) se ve la tabla */
+.solo-celular {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.solo-computadora {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .solo-celular {
+        display: none;
+    }
+
+    .solo-computadora {
+        display: block;
+    }
+}
+
+/* AVISOS: mensaje flotante arriba ("Artículo registrado", "Deuda eliminada"...) */
+.aviso {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    z-index: 100;
+    width: 356px;
+    max-width: calc(100% - 32px);
+    padding: 12px 16px;
+    transform: translateX(-50%);
+    border: 1px solid #BFE8D0;
+    border-radius: 10px;
+    background-color: #ECFDF3;
+    color: #18794E;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.aviso.error {
+    border-color: #FFD6D6;
+    background-color: #FFF0F0;
+    color: var(--rojo);
+}
+
+/* CUADROS DE DIÁLOGO (ventanitas para agregar, abonar, confirmar...) */
+dialog {
+    width: calc(100% - 32px);
+    max-width: 448px;
+    max-height: 90vh;
+    padding: 0;
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    color: var(--texto);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.dialogo-contenido {
+    position: relative;
+    padding: 24px;
+}
+
+.dialogo-contenido h3 {
+    padding-right: 24px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.descripcion {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--gris);
+}
+
+.cerrar {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--gris);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    outline: none;
+}
+
+.cerrar:hover,
+.cerrar:focus-visible {
+    background-color: var(--fondo-gris);
+    color: var(--texto);
+}
+
+.dialogo-botones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.renglon-monto {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background-color: var(--fondo-gris);
+    font-size: 14px;
+}
+
+/* Cuadro para elegir la foto del artículo */
+.elegir-foto {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 0;
+    padding: 12px;
+    border: 1px dashed #D9CDD3;
+    border-radius: 14px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.elegir-foto:hover {
+    background-color: var(--fondo-gris);
+}
+
+.elegir-foto img,
+.foto-vacia {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.foto-vacia {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--fondo-gris);
+    color: var(--gris);
+}
+
+/* CELULAR: ajustes para pantallas chicas */
+@media (max-width: 639px) {
+    .dialogo-botones {
+        flex-direction: column-reverse;
+    }
+
+    .dialogo-botones .boton {
+        width: 100%;
+    }
+
+    .saldo-cantidad {
+        font-size: 32px;
+    }
+}
