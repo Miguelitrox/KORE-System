@@ -67,6 +67,7 @@ El navegador guarda copias de `estilos.css` y de los `.js` para cargar más ráp
 | `base_datos.sql` | Crea la base de datos `kore_barberia`, sus tablas y los servicios de ejemplo |
 | `.htaccess` | Le dice a Apache que abra `index.html` y que el navegador no use copias viejas |
 | `imagenes/logo.png` | Logo de KORE System |
+| `kore-studio/` | La agenda original de KORE Studio (login, registro, agenda y panel del CEO con Firebase), tal como se subió a GitHub. Se abre en <http://localhost/nuevo-proyecto/kore-studio/login.html>. La DEMO no la usa: su agenda ya está adaptada en `citas.html`. |
 
 ## Cómo se conecta todo
 
