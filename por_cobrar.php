@@ -1,8 +1,9 @@
 <?php
-// VENTAS > POR COBRAR: lo que me deben.
-// Aquí salen las ventas financiadas (se crean solas al vender) y las deudas que agrego a mano.
+// DEUDAS > POR COBRAR: lo que me deben.
+// Aquí salen los registros que quedaron fiados (se crean solos al registrar) y las deudas que agrego a mano.
 // En cuanto una deuda se termina de pagar, sale de esta lista.
 include("conexion.php");
+include("configuracion.php");
 include("funciones.php");
 
 // GUARDAR DEUDA: si el id es 0 es nueva, si no, se edita una que ya existe
@@ -26,7 +27,7 @@ if (isset($_POST["guardar_deuda"])) {
     }
 
     if ($id == 0) {
-        // venta_id se queda vacío (NULL) porque no viene de una venta
+        // atencion_id se queda vacío (NULL) porque no viene de un registro fiado
         $sql = $conexion->prepare("INSERT INTO deudas_cobrar (fecha, nombre, comentario, total) VALUES (?, ?, ?, ?)");
         $sql->bind_param("sssd", $fecha, $nombre, $comentario, $total);
         $sql->execute();
@@ -38,8 +39,8 @@ if (isset($_POST["guardar_deuda"])) {
         $sql->execute();
         $deuda = $sql->get_result()->fetch_assoc();
 
-        if (!$deuda || $deuda["venta_id"] != null) {
-            header("Location: por_cobrar.php?error=venta");
+        if (!$deuda || $deuda["atencion_id"] != null) {
+            header("Location: por_cobrar.php?error=fiado");
             exit;
         }
         if ($total < $deuda["abonado"]) {
@@ -62,11 +63,11 @@ if (isset($_POST["guardar_deuda"])) {
     exit;
 }
 
-// BORRAR DEUDA (solo las agregadas a mano; las de una venta no se pueden borrar)
+// BORRAR DEUDA (solo las agregadas a mano; las de un registro fiado no se pueden borrar)
 if (isset($_POST["borrar_deuda"])) {
     $id = (int) $_POST["id"];
 
-    $sql = $conexion->prepare("DELETE FROM deudas_cobrar WHERE id = ? AND venta_id IS NULL");
+    $sql = $conexion->prepare("DELETE FROM deudas_cobrar WHERE id = ? AND atencion_id IS NULL");
     $sql->bind_param("i", $id);
     $sql->execute();
 
@@ -109,8 +110,12 @@ if (isset($_POST["abonar"])) {
     $sql->bind_param("dsi", $abonado, $estado, $id);
     $sql->execute();
 
-    // El dinero que me pagaron entra a mi saldo
-    registrar_movimiento($conexion, "cobro_deuda", $monto, "Cobro de deuda: " . $deuda["nombre"]);
+    // El dinero que me pagaron entra a la caja
+    $detalle = "Cobro de deuda: " . $deuda["nombre"];
+    if ($deuda["atencion_id"] != null) {
+        $detalle = "Cobro de fiado: " . $deuda["nombre"];
+    }
+    registrar_movimiento($conexion, "cobro_deuda", $monto, $detalle);
 
     header("Location: por_cobrar.php?aviso=abono");
     exit;
@@ -137,7 +142,7 @@ $avisos = [
 $errores = [
     "nombre" => "Escribe quién te debe.",
     "total" => "El monto total debe ser mayor a cero.",
-    "venta" => "No se puede editar una deuda generada por una venta.",
+    "fiado" => "No se puede editar una deuda que viene de un registro fiado.",
     "menor" => "El total no puede ser menor que lo ya abonado.",
     "no_existe" => "La deuda no existe.",
     "monto" => "El monto a abonar debe ser mayor a cero.",
@@ -149,8 +154,8 @@ $errores = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#BD2E73">
-    <title>Deudas por cobrar - KORE System</title>
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Por cobrar - <?php echo $negocio; ?> | KORE System</title>
     <link rel="icon" href="imagenes/logo.png">
     <link rel="stylesheet" href="estilos.css">
 </head>
@@ -159,14 +164,14 @@ $errores = [
     <?php mostrar_aviso($avisos, $errores); ?>
 
     <main class="contenedor">
-        <?php include("menu_ventas.php"); ?>
+        <?php include("menu_deudas.php"); ?>
 
         <div class="titulo-seccion">
             <div class="titulo-con-icono">
                 <span class="circulo grande verde"><?php echo icono("cobrar"); ?></span>
                 <div>
                     <h2>Deudas por cobrar</h2>
-                    <p class="gris chico">Lo que te deben</p>
+                    <p class="gris chico">Lo que te deben (fiados y préstamos)</p>
                 </div>
             </div>
             <button type="button" class="boton boton-verde" onclick="nuevaDeuda()">
@@ -197,7 +202,7 @@ $errores = [
             <?php } ?>
 
             <?php foreach ($deudas as $fila) { ?>
-                <div class="tarjeta articulo">
+                <div class="tarjeta ficha">
                     <div class="renglon">
                         <div>
                             <p class="negrita cortar"><?php echo htmlspecialchars($fila["nombre"]); ?></p>
@@ -205,13 +210,13 @@ $errores = [
                         </div>
                         <div class="celda-flex">
                             <span class="etiqueta pendiente">Pendiente</span>
-                            <?php if ($fila["venta_id"] == null) { ?>
+                            <?php if ($fila["atencion_id"] == null) { ?>
                                 <button type="button" class="boton-icono" title="Editar deuda" onclick="editarDeuda(<?php echo $fila["id"]; ?>)">
                                     <?php echo icono("lapiz"); ?>
                                 </button>
                                 <form method="post" class="en-linea" data-nombre="<?php echo htmlspecialchars($fila["nombre"]); ?>" onsubmit="return confirmarBorrado(this, 'esta deuda')">
                                     <input type="hidden" name="id" value="<?php echo $fila["id"]; ?>">
-                                    <button type="submit" name="borrar_deuda" class="boton-icono rosa" title="Eliminar deuda">
+                                    <button type="submit" name="borrar_deuda" class="boton-icono rojo" title="Eliminar deuda">
                                         <?php echo icono("basura"); ?>
                                     </button>
                                 </form>
@@ -246,8 +251,8 @@ $errores = [
             <table>
                 <thead>
                     <tr>
-                        <th>Producto / Detalle</th>
-                        <th>Comentario</th>
+                        <th>Cliente</th>
+                        <th>Detalle</th>
                         <th class="derecha">Monto total</th>
                         <th class="derecha">Pagado</th>
                         <th class="derecha">Pendiente</th>
@@ -279,14 +284,14 @@ $errores = [
                                 </button>
                             </td>
                             <td>
-                                <?php if ($fila["venta_id"] == null) { ?>
+                                <?php if ($fila["atencion_id"] == null) { ?>
                                     <div class="celda-flex">
                                         <button type="button" class="boton-icono" title="Editar deuda" onclick="editarDeuda(<?php echo $fila["id"]; ?>)">
                                             <?php echo icono("lapiz"); ?>
                                         </button>
                                         <form method="post" class="en-linea" data-nombre="<?php echo htmlspecialchars($fila["nombre"]); ?>" onsubmit="return confirmarBorrado(this, 'esta deuda')">
                                             <input type="hidden" name="id" value="<?php echo $fila["id"]; ?>">
-                                            <button type="submit" name="borrar_deuda" class="boton-icono rosa" title="Eliminar deuda">
+                                            <button type="submit" name="borrar_deuda" class="boton-icono rojo" title="Eliminar deuda">
                                                 <?php echo icono("basura"); ?>
                                             </button>
                                         </form>
@@ -309,6 +314,8 @@ $errores = [
                 <?php } ?>
             </table>
         </div>
+
+        <?php include("pie.php"); ?>
     </main>
 
     <!-- CUADRO PARA AGREGAR O EDITAR UNA DEUDA -->
@@ -316,7 +323,7 @@ $errores = [
         <form method="post" class="dialogo-contenido">
             <button type="button" class="cerrar" onclick="cerrarDialogo('dialogo-deuda')">&times;</button>
             <h3 id="deuda-titulo">Nueva deuda por cobrar</h3>
-            <p class="descripcion" id="deuda-descripcion">Registra dinero que te deben (no ligado a una venta).</p>
+            <p class="descripcion" id="deuda-descripcion">Registra dinero que te deben (que no venga de un registro fiado).</p>
 
             <input type="hidden" name="id" id="deuda-id" value="0">
 
@@ -371,7 +378,7 @@ $errores = [
             document.getElementById("total").value = "";
 
             document.getElementById("deuda-titulo").textContent = "Nueva deuda por cobrar";
-            document.getElementById("deuda-descripcion").textContent = "Registra dinero que te deben (no ligado a una venta).";
+            document.getElementById("deuda-descripcion").textContent = "Registra dinero que te deben (que no venga de un registro fiado).";
             document.getElementById("deuda-boton").textContent = "Guardar deuda";
             abrirDialogo("dialogo-deuda");
         }

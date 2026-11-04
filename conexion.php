@@ -6,7 +6,7 @@
 $servidor   = "localhost";
 $usuario    = "root";
 $clave      = "";
-$base_datos = "nuevo_proyecto";
+$base_datos = "kore_barberia";      // cada negocio que usa KORE System tiene su propia base de datos
 
 // Hora de México (XAMPP trae por defecto la hora de Alemania)
 date_default_timezone_set("America/Mexico_City");

@@ -1,7 +1,8 @@
 <?php
-// VENTAS > POR PAGAR: lo que yo debo.
+// DEUDAS > POR PAGAR: lo que yo debo (proveedores, renta, préstamos...).
 // En cuanto una deuda se termina de pagar, sale de esta lista.
 include("conexion.php");
+include("configuracion.php");
 include("funciones.php");
 
 // GUARDAR DEUDA: si el id es 0 es nueva, si no, se edita una que ya existe
@@ -106,7 +107,7 @@ if (isset($_POST["abonar"])) {
     $sql->bind_param("dsi", $abonado, $estado, $id);
     $sql->execute();
 
-    // El dinero que pagué sale de mi saldo
+    // El dinero que pagué sale de la caja
     registrar_movimiento($conexion, "abono_pagar", $monto, "Abono a deuda: " . $deuda["nombre"]);
 
     header("Location: por_pagar.php?aviso=abono");
@@ -145,8 +146,8 @@ $errores = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#BD2E73">
-    <title>Deudas a pagar - KORE System</title>
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Por pagar - <?php echo $negocio; ?> | KORE System</title>
     <link rel="icon" href="imagenes/logo.png">
     <link rel="stylesheet" href="estilos.css">
 </head>
@@ -155,14 +156,14 @@ $errores = [
     <?php mostrar_aviso($avisos, $errores); ?>
 
     <main class="contenedor">
-        <?php include("menu_ventas.php"); ?>
+        <?php include("menu_deudas.php"); ?>
 
         <div class="titulo-seccion">
             <div class="titulo-con-icono">
                 <span class="circulo grande"><?php echo icono("pagar"); ?></span>
                 <div>
                     <h2>Deudas a pagar</h2>
-                    <p class="gris chico">Lo que debes</p>
+                    <p class="gris chico">Lo que debes (proveedores, renta...)</p>
                 </div>
             </div>
             <button type="button" class="boton" onclick="nuevaDeuda()">
@@ -193,7 +194,7 @@ $errores = [
             <?php } ?>
 
             <?php foreach ($deudas as $fila) { ?>
-                <div class="tarjeta articulo">
+                <div class="tarjeta ficha">
                     <div class="renglon">
                         <div>
                             <p class="negrita cortar"><?php echo htmlspecialchars($fila["nombre"]); ?></p>
@@ -206,7 +207,7 @@ $errores = [
                             </button>
                             <form method="post" class="en-linea" data-nombre="<?php echo htmlspecialchars($fila["nombre"]); ?>" onsubmit="return confirmarBorrado(this, 'esta deuda')">
                                 <input type="hidden" name="id" value="<?php echo $fila["id"]; ?>">
-                                <button type="submit" name="borrar_deuda" class="boton-icono rosa" title="Eliminar deuda">
+                                <button type="submit" name="borrar_deuda" class="boton-icono rojo" title="Eliminar deuda">
                                     <?php echo icono("basura"); ?>
                                 </button>
                             </form>
@@ -281,7 +282,7 @@ $errores = [
                                     </button>
                                     <form method="post" class="en-linea" data-nombre="<?php echo htmlspecialchars($fila["nombre"]); ?>" onsubmit="return confirmarBorrado(this, 'esta deuda')">
                                         <input type="hidden" name="id" value="<?php echo $fila["id"]; ?>">
-                                        <button type="submit" name="borrar_deuda" class="boton-icono rosa" title="Eliminar deuda">
+                                        <button type="submit" name="borrar_deuda" class="boton-icono rojo" title="Eliminar deuda">
                                             <?php echo icono("basura"); ?>
                                         </button>
                                     </form>
@@ -303,6 +304,8 @@ $errores = [
                 <?php } ?>
             </table>
         </div>
+
+        <?php include("pie.php"); ?>
     </main>
 
     <!-- CUADRO PARA AGREGAR O EDITAR UNA DEUDA -->
@@ -318,7 +321,7 @@ $errores = [
             <input type="date" id="fecha" name="fecha" required>
 
             <label for="nombre">A quién le debo</label>
-            <input type="text" id="nombre" name="nombre" placeholder="A quién o qué" maxlength="150" required autocomplete="off">
+            <input type="text" id="nombre" name="nombre" placeholder="Ej. Proveedor de productos" maxlength="150" required autocomplete="off">
 
             <label for="descripcion">Descripción</label>
             <input type="text" id="descripcion" name="descripcion" placeholder="Descripción" maxlength="255" autocomplete="off">
