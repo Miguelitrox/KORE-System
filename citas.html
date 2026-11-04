@@ -6,7 +6,8 @@
     <meta name="theme-color" content="#1C1C1E">
     <title>Citas</title>
     <link rel="icon" href="imagenes/logo.png">
-    <link rel="stylesheet" href="estilos.css">
+    <!-- ?v=2: si cambias estilos.css o los archivos .js, sube el número para que el navegador baje la versión nueva -->
+    <link rel="stylesheet" href="estilos.css?v=2">
 </head>
 <body>
     <!-- PÁGINA DE CITAS: la agenda del negocio (viene de la agenda de KORE Studio). -->
@@ -39,6 +40,7 @@
                         <button type="button" class="boton-icono boton-flecha" title="Mes anterior" onclick="cambiarMes(-1)">
                             <span data-icono="izquierda"></span>
                         </button>
+                        <button type="button" class="boton boton-borde boton-chico" title="Regresar al mes de hoy" onclick="irAHoy()">Hoy</button>
                         <button type="button" class="boton-icono boton-flecha" title="Mes siguiente" onclick="cambiarMes(1)">
                             <span data-icono="derecha"></span>
                         </button>
@@ -53,7 +55,11 @@
                 <!-- Aquí JavaScript pone un cuadrito por cada día del mes -->
                 <div class="calendario" id="calendario"></div>
 
-                <p class="gris chico ayuda-calendario">Toca un día para ver sus citas.</p>
+                <div class="ayuda-calendario">
+                    <span class="gris chico">Toca un día para ver sus citas.</span>
+                    <span class="leyenda"><span class="punto punto-hoy"></span> Hoy</span>
+                    <span class="leyenda"><span class="punto punto-citas"></span> Con citas</span>
+                </div>
             </div>
 
             <!-- PRÓXIMAS CITAS -->
@@ -62,7 +68,11 @@
                     <span class="circulo"><span data-icono="reloj"></span></span>
                     Próximas citas
                 </h3>
-                <p class="vacio" id="sin-citas" hidden>No hay citas próximas. Toca "Nueva cita" para agendar.</p>
+                <div class="sin-citas" id="sin-citas" hidden>
+                    <span class="circulo enorme"><span data-icono="calendario"></span></span>
+                    <p class="negrita">No hay citas próximas</p>
+                    <p class="gris chico">Toca "Nueva cita" o usa el micrófono para dictar una.</p>
+                </div>
                 <ul class="lista" id="proximas-citas"></ul>
             </div>
         </div>
@@ -171,8 +181,8 @@
     </dialog>
 
     <script src="api/configuracion.php"></script>
-    <script src="funciones.js"></script>
-    <script src="componentes.js"></script>
+    <script src="funciones.js?v=2"></script>
+    <script src="componentes.js?v=2"></script>
     <script>
         // Datos que llegan de la base de datos
         let citas = [];
@@ -338,6 +348,9 @@
                 if (fecha == hoy()) {
                     cuadro.className = cuadro.className + " hoy";
                 }
+                if (fecha < hoy()) {
+                    cuadro.className = cuadro.className + " pasado";     // los días que ya pasaron se ven en gris
+                }
                 if (delDia.length > 0) {
                     cuadro.className = cuadro.className + " con-citas";
                     cuadro.title = plural(delDia.length, "cita", "citas");
@@ -365,6 +378,13 @@
             dibujarCalendario();
         }
 
+        // Botón "Hoy": regresa el calendario al mes de hoy
+        function irAHoy() {
+            mesVisto = new Date();
+            mesVisto.setDate(1);
+            dibujarCalendario();
+        }
+
         // PRÓXIMAS CITAS: de hoy en adelante (ya vienen ordenadas por fecha y hora)
         function dibujarProximas() {
             let lugar = document.getElementById("proximas-citas");
@@ -377,12 +397,40 @@
                 }
             }
 
-            document.getElementById("cuantas-citas").textContent = plural(proximas.length, "cita próxima", "citas próximas");
+            // Arriba sale: "2 citas hoy · 7 citas próximas"
+            let deHoy = citasDelDia(hoy()).length;
+            document.getElementById("cuantas-citas").textContent =
+                plural(deHoy, "cita hoy", "citas hoy") + " · " + plural(proximas.length, "cita próxima", "citas próximas");
             document.getElementById("sin-citas").hidden = (proximas.length > 0);
 
+            // Las citas se agrupan por día: antes de cada día nuevo va su título ("Hoy", "Mañana"...)
+            let diaAnterior = "";
             for (let i = 0; i < proximas.length; i++) {
-                lugar.appendChild(renglonCita(proximas[i], true));
+                if (proximas[i].fecha != diaAnterior) {
+                    lugar.appendChild(crear("li", "grupo-dia", nombreDelDia(proximas[i].fecha)));
+                    diaAnterior = proximas[i].fecha;
+                }
+                lugar.appendChild(renglonCita(proximas[i], false));
             }
+        }
+
+        // "2026-11-04" → "Hoy · miércoles 4 de noviembre", el siguiente "Mañana · ..." y los demás "sábado 7 de noviembre"
+        function nombreDelDia(fecha) {
+            let partes = fecha.split("-");
+            let dia = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+            let semana = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+            let texto = semana[dia.getDay()] + " " + dia.getDate() + " de " + MESES_LARGOS[dia.getMonth()];
+
+            let manana = new Date();
+            manana.setDate(manana.getDate() + 1);
+
+            if (fecha == hoy()) {
+                return "Hoy · " + texto;
+            }
+            if (fecha == fechaTexto(manana)) {
+                return "Mañana · " + texto;
+            }
+            return texto;
         }
 
         // "2026-11-05" → "jue 5 nov"

@@ -32,6 +32,14 @@ El dictado por voz funciona en Chrome y Edge (en Firefox no aparece el botón de
 - Los archivos de `api` son PHP chiquitos que leen o guardan en MySQL y contestan en JSON: `{ "ok": true, ... }` o `{ "ok": false, "error": "..." }`.
 - Para guardar se manda el formulario con una `accion` (guardar, borrar, abonar...).
 
+## Si una página se ve vieja o se queda en "Cargando..."
+
+El navegador guarda copias de `estilos.css` y de los `.js` para cargar más rápido. Para que no use copias viejas:
+
+- `.htaccess` le pide al navegador que siempre revise si hay una versión nueva.
+- Cada página carga los estilos y el JavaScript con `?v=2` (ej. `estilos.css?v=2`). Si cambias uno de esos archivos, sube el número en las 7 páginas (`?v=3`).
+- Si aun así se ve algo viejo, presiona **Ctrl + F5** para recargar todo.
+
 ## Cómo adaptarlo a otro negocio
 
 1. `configuracion.php`: nombre del negocio, texto de abajo del nombre, formas de pago y `$es_demo` (`true` muestra los avisos de DEMO). JavaScript los recibe por `api/configuracion.php`, así que solo se cambian aquí.
@@ -57,6 +65,7 @@ El dictado por voz funciona en Chrome y Edge (en Firefox no aparece el botón de
 | `conexion.php` | Datos para conectarse a MySQL de XAMPP |
 | `funciones.php` | Funciones de PHP que usan los archivos de `api` |
 | `base_datos.sql` | Crea la base de datos `kore_barberia`, sus tablas y los servicios de ejemplo |
+| `.htaccess` | Le dice a Apache que abra `index.html` y que el navegador no use copias viejas |
 | `imagenes/logo.png` | Logo de KORE System |
 
 ## Cómo se conecta todo

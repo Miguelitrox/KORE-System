@@ -1,0 +1,22 @@
+# CONFIGURACIÓN DE APACHE PARA ESTA CARPETA
+
+# Página que se abre al entrar a http://localhost/nuevo-proyecto/
+DirectoryIndex index.html
+
+# Las páginas antes eran .php (index.php, citas.php...) y ahora son .html.
+# Si el navegador todavía busca la dirección vieja, se manda a la nueva en lugar de dar error 404.
+# (Si cambias el nombre de la carpeta del proyecto, cámbialo también en RewriteBase)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /nuevo-proyecto/
+    RewriteRule ^(index|servicios|reportes|caja|por_cobrar|por_pagar)\.php$ $1.html [R=302,L]
+</IfModule>
+
+# Que el navegador siempre pregunte si hay una versión nueva de las páginas, los estilos
+# y el JavaScript. Así no se queda con archivos viejos después de un cambio
+# (si no cambió nada, Apache le contesta "sigue igual" y no se vuelve a descargar).
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|css|js)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>

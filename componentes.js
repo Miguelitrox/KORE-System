@@ -128,7 +128,9 @@ function dibujarPie() {
             'KORE System se adapta a lo que necesite cada negocio.</p>';
     }
 
+    // El espacio de antes del pie crece para empujar el pie hasta abajo de la pantalla
     lugar.outerHTML =
+        '<div class="espacio-pie"></div>' +
         '<footer class="pie">' +
         '    <p class="firma-kore"><img src="imagenes/logo.png" alt="Logo de KORE System"> Hecho con <strong>KORE System</strong></p>' +
         notaDemo +
