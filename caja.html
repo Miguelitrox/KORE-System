@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Caja</title>
+    <link rel="icon" href="imagenes/logo.png">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <!-- PÁGINA DE CAJA: dinero en caja, gastos e ingresos extra, notas y movimientos. -->
+    <!-- Las ventas que se registran en la página principal entran aquí solas. -->
+    <div id="encabezado"></div>
+
+    <main class="contenedor">
+        <!-- DINERO EN CAJA -->
+        <div class="saldo">
+            <p class="saldo-titulo">Dinero en caja</p>
+            <p class="saldo-cantidad" id="dinero-actual">$0.00</p>
+            <p class="saldo-nota" id="nota-saldo">Saldo disponible</p>
+        </div>
+
+        <!-- REGISTRAR GASTO E INGRESO -->
+        <!-- Al presionar el botón (o Enter) se abre un cuadro para escribir el detalle -->
+        <div class="dos-columnas">
+            <div class="tarjeta">
+                <h3 class="tarjeta-titulo">
+                    <span class="circulo rojo"><span data-icono="baja"></span></span>
+                    Registrar gasto
+                </h3>
+                <form onsubmit="abrirMovimiento('gasto'); return false;">
+                    <div class="campo-dinero grande">
+                        <span>$</span>
+                        <input type="number" id="monto-gasto" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
+                    </div>
+                    <br>
+                    <button type="submit" class="boton boton-grande boton-ancho boton-rojo">
+                        <span data-icono="menos"></span> Restar de la caja
+                    </button>
+                </form>
+            </div>
+
+            <div class="tarjeta">
+                <h3 class="tarjeta-titulo">
+                    <span class="circulo verde"><span data-icono="sube"></span></span>
+                    Registrar ingreso extra
+                </h3>
+                <form onsubmit="abrirMovimiento('ingreso'); return false;">
+                    <div class="campo-dinero grande">
+                        <span>$</span>
+                        <input type="number" id="monto-ingreso" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
+                    </div>
+                    <br>
+                    <button type="submit" class="boton boton-grande boton-ancho boton-verde">
+                        <span data-icono="mas"></span> Sumar a la caja
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- BITÁCORA DE ANOTACIONES -->
+        <div class="tarjeta">
+            <h3 class="tarjeta-titulo">
+                <span class="circulo"><span data-icono="libreta"></span></span>
+                Bitácora de anotaciones
+                <span class="guardado" id="notas-guardadas" hidden><span data-icono="palomita"></span> Guardado</span>
+            </h3>
+            <form id="formulario-notas" onsubmit="guardarNotas(event)">
+                <textarea name="notas" id="notas" placeholder="Escribe aquí tus notas: pedidos pendientes, pagos, recordatorios..."></textarea>
+                <br><br>
+                <button type="submit" class="boton boton-borde">Guardar notas</button>
+            </form>
+        </div>
+
+        <!-- HISTORIAL DE MOVIMIENTOS DE CAJA -->
+        <div class="tarjeta">
+            <div class="tarjeta-encabezado">
+                <h3 class="tarjeta-titulo">
+                    <span class="circulo"><span data-icono="historial"></span></span>
+                    Movimientos de caja
+                </h3>
+                <!-- Al cambiar la opción se vuelven a pedir los movimientos de esos días -->
+                <select id="dias" class="select-chico" onchange="cargarCaja()">
+                    <option value="3" selected>Últimos 3 días</option>
+                    <option value="7">Última semana</option>
+                    <option value="14">Últimas 2 semanas</option>
+                    <option value="21">Últimas 3 semanas</option>
+                    <option value="30">Último mes</option>
+                    <option value="90">Últimos 3 meses</option>
+                    <option value="180">Últimos 6 meses</option>
+                    <option value="365">Último año</option>
+                </select>
+            </div>
+
+            <p class="vacio" id="sin-movimientos" hidden>No hay movimientos en este periodo.</p>
+            <ul class="lista" id="lista-movimientos"></ul>
+        </div>
+
+        <div id="pie"></div>
+    </main>
+
+    <!-- CUADRO PARA CONFIRMAR EL GASTO O INGRESO -->
+    <dialog id="dialogo-movimiento">
+        <form class="dialogo-contenido" id="formulario-movimiento" onsubmit="guardarMovimiento(event)">
+            <h3 id="movimiento-titulo">Confirmar gasto</h3>
+            <p class="descripcion" id="movimiento-descripcion"></p>
+
+            <div class="renglon-monto">
+                <span class="gris" id="movimiento-etiqueta">Monto a restar</span>
+                <strong id="movimiento-monto">$0.00</strong>
+            </div>
+
+            <label for="movimiento-detalle" id="movimiento-detalle-titulo">Detalle del gasto</label>
+            <input type="text" id="movimiento-detalle" name="detalle" maxlength="255" required autocomplete="off" autofocus>
+
+            <input type="hidden" name="tipo" id="movimiento-tipo">
+            <input type="hidden" name="monto" id="movimiento-valor">
+
+            <p class="texto-error" id="error-movimiento" hidden></p>
+
+            <div class="dialogo-botones">
+                <button type="button" class="boton boton-borde" onclick="cerrarDialogo('dialogo-movimiento')">Cancelar</button>
+                <button type="submit" class="boton" id="movimiento-boton">Guardar movimiento</button>
+            </div>
+
+            <button type="button" class="cerrar" onclick="cerrarDialogo('dialogo-movimiento')">&times;</button>
+        </form>
+    </dialog>
+
+    <script src="api/configuracion.php"></script>
+    <script src="funciones.js"></script>
+    <script src="componentes.js"></script>
+    <script>
+        // PIDE EL DINERO EN CAJA, LAS NOTAS Y LOS MOVIMIENTOS
+        // cargarNotas = true también llena la bitácora (solo al abrir la página, para no borrar lo que se está escribiendo)
+        async function cargarCaja(cargarNotas) {
+            let dias = document.getElementById("dias").value;
+            let datos = await pedir("api/caja.php?dias=" + dias);
+            if (!datos.ok) {
+                mostrarAviso(datos.error, true);
+                return;
+            }
+
+            document.getElementById("dinero-actual").textContent = dinero(datos.dinero_actual);
+            if (Number(datos.dinero_actual) >= 0) {
+                document.getElementById("nota-saldo").textContent = "Saldo disponible";
+            } else {
+                document.getElementById("nota-saldo").textContent = "Saldo en negativo";
+            }
+
+            if (cargarNotas) {
+                document.getElementById("notas").value = datos.notas;
+            }
+
+            dibujarMovimientos(datos.movimientos);
+        }
+
+        function dibujarMovimientos(movimientos) {
+            let lista = document.getElementById("lista-movimientos");
+            lista.innerHTML = "";
+            document.getElementById("sin-movimientos").hidden = (movimientos.length > 0);
+
+            for (let i = 0; i < movimientos.length; i++) {
+                let movimiento = movimientos[i];
+
+                let renglon = crear("li", "renglon fondo-rojo");
+                let cantidad = crear("span", "cantidad texto-rojo", "-" + dinero(movimiento.monto));
+                if (esIngreso(movimiento.tipo)) {
+                    renglon.className = "renglon fondo-verde";
+                    cantidad = crear("span", "cantidad texto-verde", "+" + dinero(movimiento.monto));
+                }
+
+                let izquierda = crear("div");
+                izquierda.appendChild(crear("p", "lista-titulo", movimiento.detalle));
+                izquierda.appendChild(crear("p", "lista-fecha", fechaHora(movimiento.fecha_hora)));
+
+                renglon.appendChild(izquierda);
+                renglon.appendChild(cantidad);
+                lista.appendChild(renglon);
+            }
+        }
+
+        // Abre el cuadro de confirmación con la cantidad que se escribió
+        // tipo = "gasto" o "ingreso"
+        function abrirMovimiento(tipo) {
+            let campo = document.getElementById("monto-" + tipo);
+            let monto = parseFloat(campo.value);
+
+            if (isNaN(monto) || monto <= 0) {
+                campo.focus();
+                return;
+            }
+
+            document.getElementById("movimiento-tipo").value = tipo;
+            document.getElementById("movimiento-valor").value = monto;
+            document.getElementById("movimiento-monto").textContent = dinero(monto);
+            document.getElementById("movimiento-detalle").value = "";
+            mostrarError("error-movimiento", "");
+
+            let detalle = document.getElementById("movimiento-detalle");
+            let boton = document.getElementById("movimiento-boton");
+            let cantidad = document.getElementById("movimiento-monto");
+
+            if (tipo == "gasto") {
+                document.getElementById("movimiento-titulo").textContent = "Confirmar gasto";
+                document.getElementById("movimiento-descripcion").textContent = "Este dinero se restará de la caja y quedará en los movimientos.";
+                document.getElementById("movimiento-etiqueta").textContent = "Monto a restar";
+                document.getElementById("movimiento-detalle-titulo").textContent = "Detalle del gasto";
+                detalle.placeholder = "Ej. Navajas, renta, luz, productos...";
+                cantidad.className = "texto-rojo";
+                boton.className = "boton boton-rojo";
+            } else {
+                document.getElementById("movimiento-titulo").textContent = "Confirmar ingreso";
+                document.getElementById("movimiento-descripcion").textContent = "Este dinero se sumará a la caja y quedará en los movimientos.";
+                document.getElementById("movimiento-etiqueta").textContent = "Monto a sumar";
+                document.getElementById("movimiento-detalle-titulo").textContent = "Detalle del ingreso";
+                detalle.placeholder = "Ej. Propina, venta de cera o shampoo...";
+                cantidad.className = "texto-verde";
+                boton.className = "boton boton-verde";
+            }
+
+            abrirDialogo("dialogo-movimiento");
+        }
+
+        // GUARDAR EL GASTO O INGRESO
+        async function guardarMovimiento(evento) {
+            evento.preventDefault();
+
+            let tipo = document.getElementById("movimiento-tipo").value;
+            let datos = new FormData(document.getElementById("formulario-movimiento"));
+            datos.append("accion", "movimiento");
+
+            let respuesta = await pedir("api/caja.php", datos);
+            if (!respuesta.ok) {
+                mostrarError("error-movimiento", respuesta.error);
+                return;
+            }
+
+            document.getElementById("monto-" + tipo).value = "";
+            cerrarDialogo("dialogo-movimiento");
+            mostrarAviso(respuesta.mensaje);
+            cargarCaja(false);
+        }
+
+        // GUARDAR LAS NOTAS: sale "Guardado" junto al título por 3 segundos
+        async function guardarNotas(evento) {
+            evento.preventDefault();
+
+            let datos = new FormData(document.getElementById("formulario-notas"));
+            datos.append("accion", "notas");
+
+            let respuesta = await pedir("api/caja.php", datos);
+            if (!respuesta.ok) {
+                mostrarAviso(respuesta.error, true);
+                return;
+            }
+
+            let guardado = document.getElementById("notas-guardadas");
+            guardado.hidden = false;
+            setTimeout(function () {
+                guardado.hidden = true;
+            }, 3000);
+        }
+
+        cargarCaja(true);
+    </script>
+</body>
+</html>

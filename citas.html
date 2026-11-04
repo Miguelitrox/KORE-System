@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Citas</title>
+    <link rel="icon" href="imagenes/logo.png">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <!-- PÁGINA DE CITAS: la agenda del negocio (viene de la agenda de KORE Studio). -->
+    <!-- Calendario del mes, próximas citas, agregar/editar/borrar, Google Calendar y dictado por voz. -->
+    <div id="encabezado"></div>
+
+    <main class="contenedor con-microfono">
+        <div class="titulo-seccion">
+            <div class="titulo-con-icono">
+                <span class="circulo grande"><span data-icono="calendario"></span></span>
+                <div>
+                    <h2>Citas</h2>
+                    <p class="gris chico" id="cuantas-citas">Cargando...</p>
+                </div>
+            </div>
+            <button type="button" class="boton" onclick="nuevaCita(hoy())">
+                <span data-icono="mas"></span> Nueva cita
+            </button>
+        </div>
+
+        <div class="columnas-citas">
+            <!-- CALENDARIO DEL MES -->
+            <div class="tarjeta">
+                <div class="tarjeta-encabezado">
+                    <h3 class="tarjeta-titulo">
+                        <span class="circulo"><span data-icono="calendario"></span></span>
+                        <span id="titulo-mes">Calendario</span>
+                    </h3>
+                    <div class="celda-flex">
+                        <button type="button" class="boton-icono boton-flecha" title="Mes anterior" onclick="cambiarMes(-1)">
+                            <span data-icono="izquierda"></span>
+                        </button>
+                        <button type="button" class="boton-icono boton-flecha" title="Mes siguiente" onclick="cambiarMes(1)">
+                            <span data-icono="derecha"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Días de la semana -->
+                <div class="calendario-semana">
+                    <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+                </div>
+
+                <!-- Aquí JavaScript pone un cuadrito por cada día del mes -->
+                <div class="calendario" id="calendario"></div>
+
+                <p class="gris chico ayuda-calendario">Toca un día para ver sus citas.</p>
+            </div>
+
+            <!-- PRÓXIMAS CITAS -->
+            <div class="tarjeta">
+                <h3 class="tarjeta-titulo">
+                    <span class="circulo"><span data-icono="reloj"></span></span>
+                    Próximas citas
+                </h3>
+                <p class="vacio" id="sin-citas" hidden>No hay citas próximas. Toca "Nueva cita" para agendar.</p>
+                <ul class="lista" id="proximas-citas"></ul>
+            </div>
+        </div>
+
+        <div id="pie"></div>
+    </main>
+
+    <!-- DICTADO POR VOZ: botón flotante y la tarjeta que muestra lo que se escucha -->
+    <div class="tarjeta tarjeta-voz" id="tarjeta-voz" hidden>
+        <div class="renglon">
+            <span class="negrita con-icono"><span data-icono="microfono"></span> Asistente de voz</span>
+            <!-- Barritas que se mueven mientras se graba -->
+            <span class="ondas"><span></span><span></span><span></span><span></span><span></span></span>
+        </div>
+        <div class="renglon chico">
+            <span class="gris">Tiempo:</span>
+            <strong id="tiempo-voz">00:00</strong>
+        </div>
+        <p class="chico gris">
+            Di el cliente, el servicio, la fecha y la hora. Ejemplo:
+            <em>"Cita para Juan Pérez, corte y barba, el 15 de noviembre a las 4 de la tarde"</em>.
+        </p>
+        <p class="texto-voz" id="texto-voz">Escuchando...</p>
+        <button type="button" class="boton boton-ancho" onclick="detenerVoz()">
+            <span data-icono="palomita"></span> Terminar y revisar
+        </button>
+    </div>
+
+    <button type="button" class="boton-microfono" id="boton-microfono" title="Agendar una cita dictando" onclick="alternarVoz()" hidden>
+        <span data-icono="microfono"></span>
+    </button>
+
+    <!-- CUADRO PARA AGREGAR O EDITAR UNA CITA -->
+    <dialog id="dialogo-cita">
+        <form class="dialogo-contenido" id="formulario-cita" onsubmit="guardarCita(event)">
+            <h3 id="cita-titulo">Nueva cita</h3>
+            <p class="descripcion" id="cita-descripcion">Agenda a un cliente.</p>
+
+            <input type="hidden" name="id" id="cita-id" value="0">
+
+            <label for="cliente">Cliente</label>
+            <input type="text" id="cliente" name="cliente" maxlength="100" placeholder="Nombre del cliente" required autocomplete="off">
+
+            <label for="servicio">Servicio</label>
+            <!-- Las opciones son los servicios de la pestaña Servicios -->
+            <select id="servicio" name="servicio_id" required onchange="ponerDuracionDelServicio()"></select>
+
+            <div class="dos-campos">
+                <div>
+                    <label for="fecha">Fecha</label>
+                    <input type="date" id="fecha" name="fecha" required>
+                </div>
+                <div>
+                    <label for="hora">Hora</label>
+                    <!-- Cada 30 minutos de 8:00 AM a 8:00 PM (las pone JavaScript) -->
+                    <select id="hora" name="hora" required></select>
+                </div>
+            </div>
+
+            <label for="duracion">Duración</label>
+            <!-- El valor es en minutos -->
+            <select id="duracion" name="duracion">
+                <option value="5">5 minutos</option>
+                <option value="10">10 minutos</option>
+                <option value="15">15 minutos</option>
+                <option value="30" selected>30 minutos</option>
+                <option value="45">45 minutos</option>
+                <option value="60">1 hora</option>
+                <option value="90">1.5 horas</option>
+                <option value="120">2 horas</option>
+                <option value="180">3 horas</option>
+                <option value="240">4 horas</option>
+                <option value="360">6 horas</option>
+                <option value="480">8 horas (Jornada)</option>
+                <option value="720">12 horas (Medio día / Turno)</option>
+                <option value="1440">24 horas (Todo el día)</option>
+            </select>
+
+            <p class="texto-error" id="error-cita" hidden></p>
+
+            <div class="dialogo-botones">
+                <button type="submit" class="boton boton-ancho" id="cita-boton">Guardar cita</button>
+            </div>
+
+            <button type="button" class="cerrar" onclick="cerrarDialogo('dialogo-cita')">&times;</button>
+        </form>
+    </dialog>
+
+    <!-- CUADRO CON LAS CITAS DE UN DÍA (se abre al tocar un día del calendario) -->
+    <dialog id="dialogo-dia">
+        <div class="dialogo-contenido">
+            <h3 id="dia-titulo">Citas del día</h3>
+            <p class="descripcion" id="dia-subtitulo"></p>
+
+            <p class="vacio" id="dia-vacio" hidden>No hay citas para este día.</p>
+            <ul class="lista lista-dia" id="dia-citas"></ul>
+
+            <div class="dialogo-botones">
+                <button type="button" class="boton boton-ancho" onclick="agregarCitaDelDia()">
+                    <span data-icono="mas"></span> Agregar cita para este día
+                </button>
+            </div>
+
+            <button type="button" class="cerrar" onclick="cerrarDialogo('dialogo-dia')">&times;</button>
+        </div>
+    </dialog>
+
+    <script src="api/configuracion.php"></script>
+    <script src="funciones.js"></script>
+    <script src="componentes.js"></script>
+    <script>
+        // Datos que llegan de la base de datos
+        let citas = [];
+        let servicios = [];
+
+        // Mes que se está viendo en el calendario (siempre en el día 1)
+        let mesVisto = new Date();
+        mesVisto.setDate(1);
+
+        // Día que está abierto en el cuadro "Citas del día"
+        let diaElegido = "";
+
+        const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+                              "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+        // ---------- HORAS Y DURACIONES ----------
+
+        // "16:30" o "16:30:00" → "04:30 PM"
+        function hora12(texto) {
+            let partes = texto.split(":");
+            let hora = Number(partes[0]);
+            let periodo = "AM";
+            if (hora >= 12) {
+                periodo = "PM";
+            }
+            if (hora > 12) {
+                hora = hora - 12;
+            }
+            if (hora == 0) {
+                hora = 12;
+            }
+            return String(hora).padStart(2, "0") + ":" + partes[1] + " " + periodo;
+        }
+
+        // 30 → "30 min", 60 → "1 hora", 90 → "1.5 horas"
+        function textoDuracion(minutos) {
+            minutos = Number(minutos);
+            if (minutos < 60) {
+                return minutos + " min";
+            }
+            let horas = minutos / 60;
+            if (horas == 1) {
+                return "1 hora";
+            }
+            return horas + " horas";
+        }
+
+        // Pone las horas de la cita: cada 30 minutos de 8:00 AM a 8:00 PM
+        function llenarHoras() {
+            let lista = document.getElementById("hora");
+            let vacia = crear("option", "", "-- Hora --");
+            vacia.value = "";
+            lista.appendChild(vacia);
+
+            for (let minutos = 8 * 60; minutos <= 20 * 60; minutos = minutos + 30) {
+                let hora = String(Math.floor(minutos / 60)).padStart(2, "0");
+                let minuto = String(minutos % 60).padStart(2, "0");
+                let opcion = crear("option", "", hora12(hora + ":" + minuto));
+                opcion.value = hora + ":" + minuto;
+                lista.appendChild(opcion);
+            }
+        }
+
+        // Elige un valor en una lista; si no existe (ej. un servicio de 50 min), lo agrega
+        function elegirOpcion(idLista, valor, texto) {
+            let lista = document.getElementById(idLista);
+            let existe = false;
+            for (let i = 0; i < lista.options.length; i++) {
+                if (lista.options[i].value == valor) {
+                    existe = true;
+                }
+            }
+            if (!existe) {
+                let opcion = crear("option", "", texto);
+                opcion.value = valor;
+                lista.appendChild(opcion);
+            }
+            lista.value = valor;
+        }
+
+        // Al elegir un servicio, la duración se llena con la de ese servicio (se puede cambiar)
+        function ponerDuracionDelServicio() {
+            let servicio = buscarPorId(servicios, document.getElementById("servicio").value);
+            if (servicio && Number(servicio.duracion) > 0) {
+                elegirOpcion("duracion", Number(servicio.duracion), textoDuracion(servicio.duracion));
+            }
+        }
+
+        // ---------- PEDIR LAS CITAS Y DIBUJAR TODO ----------
+
+        async function cargarCitas() {
+            let datos = await pedir("api/citas.php");
+            if (!datos.ok) {
+                mostrarAviso(datos.error, true);
+                document.getElementById("cuantas-citas").textContent = datos.error;
+                return;
+            }
+
+            citas = datos.citas;
+            servicios = datos.servicios;
+
+            llenarServicios();
+            dibujarCalendario();
+            dibujarProximas();
+
+            // Si está abierto el cuadro de un día, se actualiza también
+            if (document.getElementById("dialogo-dia").open) {
+                mostrarDia(diaElegido);
+            }
+        }
+
+        // Opciones del campo Servicio
+        function llenarServicios() {
+            let lista = document.getElementById("servicio");
+            lista.innerHTML = "";
+
+            let vacia = crear("option", "", "-- Servicio --");
+            vacia.value = "";
+            lista.appendChild(vacia);
+
+            for (let i = 0; i < servicios.length; i++) {
+                let opcion = crear("option", "", servicios[i].nombre + " — " + dinero(servicios[i].precio));
+                opcion.value = servicios[i].id;
+                lista.appendChild(opcion);
+            }
+        }
+
+        // Citas de un día, ordenadas por hora
+        function citasDelDia(fecha) {
+            let lista = [];
+            for (let i = 0; i < citas.length; i++) {
+                if (citas[i].fecha == fecha) {
+                    lista.push(citas[i]);
+                }
+            }
+            return lista;
+        }
+
+        // CALENDARIO: un cuadrito por día con los nombres de los clientes que tienen cita
+        function dibujarCalendario() {
+            let calendario = document.getElementById("calendario");
+            calendario.innerHTML = "";
+
+            let anio = mesVisto.getFullYear();
+            let mes = mesVisto.getMonth();
+            let nombreMes = MESES_LARGOS[mes].charAt(0).toUpperCase() + MESES_LARGOS[mes].slice(1);
+            document.getElementById("titulo-mes").textContent = nombreMes + " " + anio;
+
+            let primerDia = new Date(anio, mes, 1).getDay();       // 0 = domingo
+            let diasDelMes = new Date(anio, mes + 1, 0).getDate();
+
+            // Cuadros vacíos antes del día 1
+            for (let i = 0; i < primerDia; i++) {
+                calendario.appendChild(crear("span", "dia-vacio"));
+            }
+
+            for (let dia = 1; dia <= diasDelMes; dia++) {
+                let fecha = fechaTexto(new Date(anio, mes, dia));
+                let delDia = citasDelDia(fecha);
+
+                let cuadro = crear("button", "dia");
+                cuadro.type = "button";
+                if (fecha == hoy()) {
+                    cuadro.className = cuadro.className + " hoy";
+                }
+                if (delDia.length > 0) {
+                    cuadro.className = cuadro.className + " con-citas";
+                    cuadro.title = plural(delDia.length, "cita", "citas");
+                }
+
+                cuadro.appendChild(crear("span", "numero-dia", dia));
+
+                // Se ven hasta 2 nombres; si hay más, sale "+3"
+                for (let i = 0; i < delDia.length && i < 2; i++) {
+                    cuadro.appendChild(crear("span", "cliente-dia", delDia[i].cliente));
+                }
+                if (delDia.length > 2) {
+                    cuadro.appendChild(crear("span", "mas-dia", "+" + (delDia.length - 2)));
+                }
+
+                cuadro.addEventListener("click", function () {
+                    mostrarDia(fecha);
+                });
+                calendario.appendChild(cuadro);
+            }
+        }
+
+        function cambiarMes(cuantos) {
+            mesVisto.setMonth(mesVisto.getMonth() + cuantos);
+            dibujarCalendario();
+        }
+
+        // PRÓXIMAS CITAS: de hoy en adelante (ya vienen ordenadas por fecha y hora)
+        function dibujarProximas() {
+            let lugar = document.getElementById("proximas-citas");
+            lugar.innerHTML = "";
+
+            let proximas = [];
+            for (let i = 0; i < citas.length; i++) {
+                if (citas[i].fecha >= hoy()) {
+                    proximas.push(citas[i]);
+                }
+            }
+
+            document.getElementById("cuantas-citas").textContent = plural(proximas.length, "cita próxima", "citas próximas");
+            document.getElementById("sin-citas").hidden = (proximas.length > 0);
+
+            for (let i = 0; i < proximas.length; i++) {
+                lugar.appendChild(renglonCita(proximas[i], true));
+            }
+        }
+
+        // "2026-11-05" → "jue 5 nov"
+        function fechaBonita(fecha) {
+            let partes = fecha.split("-");
+            let dia = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+            let semana = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+            return semana[dia.getDay()] + " " + dia.getDate() + " " + MESES_CORTOS[dia.getMonth()];
+        }
+
+        // Renglón de una cita con sus botones. conFecha = false en el cuadro de un día (ya se sabe la fecha).
+        function renglonCita(cita, conFecha) {
+            let renglon = crear("li", "fondo-gris");
+
+            let arriba = crear("div", "renglon");
+            let textos = crear("div");
+            textos.appendChild(crear("p", "lista-titulo", cita.cliente));
+            textos.appendChild(crear("p", "lista-fecha", cita.servicio));
+
+            let etiquetas = crear("div", "etiquetas");
+            let cuando = hora12(cita.hora);
+            if (conFecha) {
+                cuando = fechaBonita(cita.fecha) + " · " + cuando;
+            }
+            etiquetas.appendChild(crear("span", "etiqueta negrita", cuando));
+            etiquetas.appendChild(crear("span", "etiqueta", textoDuracion(cita.duracion)));
+
+            arriba.appendChild(textos);
+            arriba.appendChild(etiquetas);
+
+            // Botones: Google Calendar, editar y borrar
+            let botones = crear("div", "acciones-cita");
+
+            let google = crear("a", "boton boton-borde boton-chico");
+            google.href = enlaceGoogleCalendar(cita);
+            google.target = "_blank";
+            google.innerHTML = icono("agendar") + " Agendar en Google Calendar";
+            google.addEventListener("click", function () {
+                google.innerHTML = icono("palomita") + " Agendado";
+            });
+
+            let editar = crear("button", "boton-icono");
+            editar.type = "button";
+            editar.title = "Editar cita";
+            editar.innerHTML = icono("lapiz");
+            editar.addEventListener("click", function () {
+                editarCita(cita.id);
+            });
+
+            let borrar = crear("button", "boton-icono rojo");
+            borrar.type = "button";
+            borrar.title = "Eliminar cita";
+            borrar.innerHTML = icono("basura");
+            borrar.addEventListener("click", function () {
+                borrarCita(cita);
+            });
+
+            botones.appendChild(google);
+            botones.appendChild(editar);
+            botones.appendChild(borrar);
+
+            renglon.appendChild(arriba);
+            renglon.appendChild(botones);
+            return renglon;
+        }
+
+        // ---------- GOOGLE CALENDAR ----------
+
+        // Arma el enlace que abre Google Calendar con la cita ya llenada
+        function enlaceGoogleCalendar(cita) {
+            let inicio = new Date(cita.fecha + "T" + cita.hora.substring(0, 5) + ":00");
+            let fin = new Date(inicio.getTime() + Number(cita.duracion) * 60 * 1000);
+
+            let titulo = "Cita: " + cita.cliente + " - " + cita.servicio;
+            let detalles = "Cliente: " + cita.cliente + "\nServicio: " + cita.servicio +
+                           "\nDuración: " + textoDuracion(cita.duracion) +
+                           "\nAgendado en " + CONFIG.negocio + " con KORE System";
+
+            return "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+                   "&text=" + encodeURIComponent(titulo) +
+                   "&dates=" + formatoGoogle(inicio) + "/" + formatoGoogle(fin) +
+                   "&details=" + encodeURIComponent(detalles);
+        }
+
+        // Google pide la fecha así: 20261105T223000Z (en hora de Londres; toISOString la convierte sola)
+        function formatoGoogle(fecha) {
+            return fecha.toISOString().replace(/-|:|\.\d\d\d/g, "");
+        }
+
+        // ---------- CUADRO DE UN DÍA ----------
+
+        function mostrarDia(fecha) {
+            diaElegido = fecha;
+            let partes = fecha.split("-");
+            let dia = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+
+            document.getElementById("dia-titulo").textContent = "Citas del " + dia.getDate() + " de " + MESES_LARGOS[dia.getMonth()];
+            document.getElementById("dia-subtitulo").textContent =
+                dia.toLocaleDateString("es-MX", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+            let delDia = citasDelDia(fecha);
+            let lista = document.getElementById("dia-citas");
+            lista.innerHTML = "";
+            document.getElementById("dia-vacio").hidden = (delDia.length > 0);
+
+            for (let i = 0; i < delDia.length; i++) {
+                lista.appendChild(renglonCita(delDia[i], false));
+            }
+
+            if (!document.getElementById("dialogo-dia").open) {
+                abrirDialogo("dialogo-dia");
+                // Al abrir, el navegador marca el primer botón; se le quita para que no parezca elegido
+                document.activeElement.blur();
+            }
+        }
+
+        function agregarCitaDelDia() {
+            cerrarDialogo("dialogo-dia");
+            nuevaCita(diaElegido);
+        }
+
+        // ---------- AGREGAR, EDITAR Y BORRAR ----------
+
+        // Abre el cuadro vacío para una cita nueva en la fecha que se le pase
+        function nuevaCita(fecha) {
+            document.getElementById("cita-id").value = 0;
+            document.getElementById("cliente").value = "";
+            document.getElementById("servicio").value = "";
+            document.getElementById("fecha").value = fecha;
+            document.getElementById("hora").value = "";
+            document.getElementById("duracion").value = "30";
+
+            document.getElementById("cita-titulo").textContent = "Nueva cita";
+            document.getElementById("cita-descripcion").textContent = "Agenda a un cliente.";
+            document.getElementById("cita-boton").textContent = "Guardar cita";
+            mostrarError("error-cita", "");
+
+            if (servicios.length == 0) {
+                mostrarError("error-cita", "Primero agrega servicios en la pestaña Servicios.");
+            }
+            abrirDialogo("dialogo-cita");
+        }
+
+        function editarCita(id) {
+            let cita = buscarPorId(citas, id);
+
+            // Si se está viendo el cuadro de un día, se cierra para editar
+            if (document.getElementById("dialogo-dia").open) {
+                cerrarDialogo("dialogo-dia");
+            }
+
+            document.getElementById("cita-id").value = cita.id;
+            document.getElementById("cliente").value = cita.cliente;
+            document.getElementById("fecha").value = cita.fecha;
+            document.getElementById("servicio").value = "";
+            if (buscarPorId(servicios, cita.servicio_id)) {
+                document.getElementById("servicio").value = cita.servicio_id;
+            }
+            elegirOpcion("hora", cita.hora.substring(0, 5), hora12(cita.hora));
+            elegirOpcion("duracion", Number(cita.duracion), textoDuracion(cita.duracion));
+
+            document.getElementById("cita-titulo").textContent = "Editar cita";
+            document.getElementById("cita-descripcion").textContent = "Cambia los datos de la cita.";
+            document.getElementById("cita-boton").textContent = "Guardar cambios";
+            mostrarError("error-cita", "");
+            abrirDialogo("dialogo-cita");
+        }
+
+        // GUARDAR: manda el formulario a api/citas.php
+        async function guardarCita(evento) {
+            evento.preventDefault();
+
+            let datos = new FormData(document.getElementById("formulario-cita"));
+            datos.append("accion", "guardar");
+
+            let respuesta = await pedir("api/citas.php", datos);
+            if (!respuesta.ok) {
+                mostrarError("error-cita", respuesta.error);
+                return;
+            }
+
+            cerrarDialogo("dialogo-cita");
+            mostrarAviso(respuesta.mensaje);
+            cargarCitas();
+        }
+
+        async function borrarCita(cita) {
+            if (!confirmarBorrado("esta cita", cita.cliente + " · " + fechaBonita(cita.fecha) + " " + hora12(cita.hora))) {
+                return;
+            }
+
+            let datos = new FormData();
+            datos.append("accion", "borrar");
+            datos.append("id", cita.id);
+
+            avisoDeRespuesta(await pedir("api/citas.php", datos));
+            cargarCitas();
+        }
+
+        // ---------- DICTADO POR VOZ ----------
+        // Usa el reconocimiento de voz del navegador (funciona en Chrome y Edge).
+
+        let reconocimiento = null;
+        let grabando = false;
+        let textoFinal = "";          // lo que el navegador ya entendió seguro
+        let textoEscuchado = "";      // lo anterior + lo que va entendiendo en este momento
+        let temporizadorVoz = null;
+        let segundosVoz = 0;
+
+        function prepararVoz() {
+            let Reconocimiento = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!Reconocimiento) {
+                return;       // el navegador no tiene voz: el botón se queda escondido
+            }
+
+            reconocimiento = new Reconocimiento();
+            reconocimiento.lang = "es-MX";
+            reconocimiento.continuous = true;
+            reconocimiento.interimResults = true;
+
+            reconocimiento.onresult = function (evento) {
+                let enProceso = "";
+                for (let i = evento.resultIndex; i < evento.results.length; i++) {
+                    if (evento.results[i].isFinal) {
+                        textoFinal = textoFinal + evento.results[i][0].transcript + " ";
+                    } else {
+                        enProceso = enProceso + evento.results[i][0].transcript;
+                    }
+                }
+                textoEscuchado = textoFinal + enProceso;
+                document.getElementById("texto-voz").textContent = textoEscuchado;
+            };
+
+            // El navegador se detiene solo si hay silencio; si seguimos grabando, se vuelve a encender
+            reconocimiento.onend = function () {
+                if (grabando) {
+                    try { reconocimiento.start(); } catch (error) {}
+                }
+            };
+
+            reconocimiento.onerror = function (evento) {
+                if (evento.error == "not-allowed") {
+                    grabando = false;
+                    terminarGrabacion();
+                    mostrarAviso("No se dio permiso para usar el micrófono.", true);
+                }
+            };
+
+            document.getElementById("boton-microfono").hidden = false;
+        }
+
+        function alternarVoz() {
+            if (grabando) {
+                detenerVoz();
+                return;
+            }
+
+            grabando = true;
+            textoFinal = "";
+            textoEscuchado = "";
+            document.getElementById("texto-voz").textContent = "Escuchando...";
+            document.getElementById("tarjeta-voz").hidden = false;
+
+            let boton = document.getElementById("boton-microfono");
+            boton.className = "boton-microfono grabando";
+            boton.innerHTML = icono("detener");
+
+            segundosVoz = 0;
+            document.getElementById("tiempo-voz").textContent = "00:00";
+            temporizadorVoz = setInterval(function () {
+                segundosVoz = segundosVoz + 1;
+                let minutos = String(Math.floor(segundosVoz / 60)).padStart(2, "0");
+                let segundos = String(segundosVoz % 60).padStart(2, "0");
+                document.getElementById("tiempo-voz").textContent = minutos + ":" + segundos;
+            }, 1000);
+
+            try { reconocimiento.start(); } catch (error) {}
+        }
+
+        // Esconde la tarjeta y regresa el botón a como estaba
+        function terminarGrabacion() {
+            clearInterval(temporizadorVoz);
+            document.getElementById("tarjeta-voz").hidden = true;
+            let boton = document.getElementById("boton-microfono");
+            boton.className = "boton-microfono";
+            boton.innerHTML = icono("microfono");
+        }
+
+        // Termina de grabar y abre el formulario con lo que se entendió para revisarlo
+        function detenerVoz() {
+            grabando = false;
+            try { reconocimiento.stop(); } catch (error) {}
+            terminarGrabacion();
+
+            let dicho = textoEscuchado.trim();
+            if (dicho.length <= 3) {
+                mostrarAviso("No se escuchó nada. Toca el micrófono y vuelve a intentarlo.", true);
+                return;
+            }
+            entenderDictado(dicho);
+        }
+
+        // Saca cliente, servicio, fecha y hora de lo que se dijo y llena el formulario (no se guarda solo)
+        function entenderDictado(dicho) {
+            nuevaCita(fechaDictada(dicho));
+
+            document.getElementById("cliente").value = clienteDictado(dicho);
+
+            let servicio = servicioDictado(dicho);
+            if (servicio) {
+                document.getElementById("servicio").value = servicio.id;
+                ponerDuracionDelServicio();
+            }
+
+            let hora = horaDictada(dicho);
+            if (hora != "") {
+                elegirOpcion("hora", hora, hora12(hora));
+            }
+
+            document.getElementById("cita-titulo").textContent = "Revisa la cita dictada";
+            document.getElementById("cita-descripcion").textContent = "Se entendió: \"" + dicho + "\". Corrige lo que haga falta y guarda.";
+        }
+
+        // Quita acentos y pasa a minúsculas para comparar ("Mañana" → "manana")
+        function sinAcentos(texto) {
+            return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+        }
+
+        // Cuántas letras hay que cambiar para pasar de una palabra a otra ("varba" → "barba" = 1)
+        function distancia(a, b) {
+            let tabla = [];
+            for (let i = 0; i <= b.length; i++) {
+                tabla[i] = [i];
+            }
+            for (let j = 0; j <= a.length; j++) {
+                tabla[0][j] = j;
+            }
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) == a.charAt(j - 1)) {
+                        tabla[i][j] = tabla[i - 1][j - 1];
+                    } else {
+                        tabla[i][j] = Math.min(tabla[i - 1][j - 1], tabla[i][j - 1], tabla[i - 1][j]) + 1;
+                    }
+                }
+            }
+            return tabla[b.length][a.length];
+        }
+
+        // SERVICIO: el que más se parezca a lo dicho, comparando con los servicios de la pestaña Servicios
+        function servicioDictado(dicho) {
+            let texto = sinAcentos(dicho);
+            let palabrasDichas = texto.split(/[^a-z0-9]+/);
+            let mejor = null;
+            let mejorPuntos = 0;
+
+            for (let i = 0; i < servicios.length; i++) {
+                let nombre = sinAcentos(servicios[i].nombre);
+                let puntos = 0;
+
+                if (texto.includes(nombre)) {
+                    // Dijo el nombre completo: gana el más largo ("corte y barba" antes que "corte")
+                    puntos = 100 + nombre.length;
+                } else {
+                    // Si no, se cuentan las palabras del servicio que se parecen a alguna palabra dicha
+                    let palabrasServicio = nombre.split(" ");
+                    for (let j = 0; j < palabrasServicio.length; j++) {
+                        let palabra = palabrasServicio[j];
+                        if (palabra.length <= 2) {
+                            continue;      // "de", "y"... no cuentan
+                        }
+                        for (let k = 0; k < palabrasDichas.length; k++) {
+                            if (distancia(palabra, palabrasDichas[k]) <= Math.floor(palabra.length * 0.3)) {
+                                puntos = puntos + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (puntos > mejorPuntos) {
+                    mejorPuntos = puntos;
+                    mejor = servicios[i];
+                }
+            }
+            return mejor;
+        }
+
+        // FECHA: "hoy", "mañana", "pasado mañana", "15 de noviembre" o "15/11". Si no se dice, es hoy.
+        function fechaDictada(dicho) {
+            // "a las 10 de la mañana" no quiere decir el día de mañana
+            let texto = sinAcentos(dicho).replace(/de la manana/g, "");
+            let fecha = new Date();
+
+            if (texto.includes("pasado manana")) {
+                fecha.setDate(fecha.getDate() + 2);
+                return fechaTexto(fecha);
+            }
+            if (/\bmanana\b/.test(texto)) {
+                fecha.setDate(fecha.getDate() + 1);
+                return fechaTexto(fecha);
+            }
+
+            for (let mes = 0; mes < 12; mes++) {
+                let encontrado = texto.match(new RegExp("\\b(\\d{1,2}) (de )?" + MESES_LARGOS[mes]));
+                if (encontrado) {
+                    let resultado = new Date(fecha.getFullYear(), mes, Number(encontrado[1]));
+                    // Si ese día ya pasó este año, es del año que sigue
+                    if (fechaTexto(resultado) < hoy()) {
+                        resultado = new Date(fecha.getFullYear() + 1, mes, Number(encontrado[1]));
+                    }
+                    return fechaTexto(resultado);
+                }
+            }
+
+            let numeros = texto.match(/\b(\d{1,2})[\/-](\d{1,2})\b/);
+            if (numeros && Number(numeros[2]) >= 1 && Number(numeros[2]) <= 12) {
+                return fechaTexto(new Date(fecha.getFullYear(), Number(numeros[2]) - 1, Number(numeros[1])));
+            }
+
+            return hoy();
+        }
+
+        // HORA: "a las 4", "a las 4:30", "a las 4 y media", "de la tarde", "p. m." → "16:30"
+        function horaDictada(dicho) {
+            let texto = sinAcentos(dicho);
+            let encontrado = texto.match(/a las? (\d{1,2})(?::(\d{2}))?( y media)?/);
+            if (!encontrado) {
+                encontrado = texto.match(/\b(\d{1,2}):(\d{2})\b/);
+            }
+            if (!encontrado) {
+                return "";
+            }
+
+            let hora = Number(encontrado[1]);
+            let minutos = 0;
+            if (encontrado[2]) {
+                minutos = Number(encontrado[2]);
+            }
+            if (encontrado[3]) {
+                minutos = 30;
+            }
+
+            let esTarde = /de la tarde|de la noche|p\.?\s?m\b/.test(texto);
+            let esManana = /de la manana|a\.?\s?m\b/.test(texto);
+            if (esTarde && hora < 12) {
+                hora = hora + 12;
+            }
+            // Sin decir mañana o tarde, de 1 a 7 se toma como de la tarde (el negocio abre de 8 a 8)
+            if (!esTarde && !esManana && hora >= 1 && hora <= 7) {
+                hora = hora + 12;
+            }
+            if (hora > 23 || minutos > 59) {
+                return "";
+            }
+            return String(hora).padStart(2, "0") + ":" + String(minutos).padStart(2, "0");
+        }
+
+        // CLIENTE: el nombre después de "cita para", "para", "cliente", "a nombre de" o "con"
+        function clienteDictado(dicho) {
+            // Palabras que no pueden ser nombre (fechas, horas y palabras de los servicios)
+            let prohibidas = ["el", "la", "los", "las", "un", "una", "hoy", "manana", "pasado", "cita", "de", "y", "a"];
+            prohibidas = prohibidas.concat(MESES_LARGOS);
+            for (let i = 0; i < servicios.length; i++) {
+                prohibidas = prohibidas.concat(sinAcentos(servicios[i].nombre).split(" "));
+            }
+
+            let buscador = /\b(?:cita para|para|cliente|a nombre de|con)\s+([a-záéíóúñü]+)(?:\s+([a-záéíóúñü]+))?/gi;
+            let encontrado = buscador.exec(dicho);
+            while (encontrado) {
+                let nombre = encontrado[1];
+                let apellido = encontrado[2];
+                if (!prohibidas.includes(sinAcentos(nombre))) {
+                    let completo = mayuscula(nombre);
+                    if (apellido && !prohibidas.includes(sinAcentos(apellido))) {
+                        completo = completo + " " + mayuscula(apellido);
+                    }
+                    return completo;
+                }
+                encontrado = buscador.exec(dicho);
+            }
+            return "";
+        }
+
+        // "juan" → "Juan"
+        function mayuscula(palabra) {
+            return palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase();
+        }
+
+        // ---------- AL ABRIR LA PÁGINA ----------
+        llenarHoras();
+        prepararVoz();
+        cargarCitas();
+    </script>
+</body>
+</html>

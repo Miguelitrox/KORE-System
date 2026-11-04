@@ -222,14 +222,16 @@ main {
     padding: 0 4px;
 }
 
+/* Son 6 secciones: cada una ocupa lo mismo y el texto es chico para que quepan en celular */
 .menu a {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
     padding: 10px 0;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     color: var(--gris);
     text-decoration: none;
@@ -240,7 +242,7 @@ main {
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-width: 56px;
+    max-width: 52px;
     height: 34px;
     border-radius: 999px;
 }
@@ -957,6 +959,219 @@ textarea:focus {
     gap: 10px;
     padding-top: 8px;
     text-align: center;
+}
+
+/* CITAS: calendario a la izquierda y próximas citas a la derecha (en computadora) */
+.columnas-citas {
+    display: grid;
+    gap: 16px;
+}
+
+@media (min-width: 1024px) {
+    .columnas-citas {
+        grid-template-columns: 3fr 2fr;
+        align-items: start;
+    }
+}
+
+.boton-flecha {
+    border: 1px solid var(--borde);
+}
+
+/* Días de la semana arriba del calendario */
+.calendario-semana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gris);
+    text-align: center;
+}
+
+/* Cuadrícula del mes: 7 columnas (domingo a sábado) */
+.calendario {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.dia {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    min-height: 62px;
+    padding: 4px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background-color: #FFFFFF;
+    font-family: inherit;
+    color: var(--texto);
+    text-align: left;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.dia:hover {
+    border-color: var(--principal);
+}
+
+/* Día de hoy */
+.dia.hoy {
+    border: 2px solid var(--principal);
+}
+
+/* Día que tiene citas */
+.dia.con-citas {
+    border-color: #A9D8BC;
+    background-color: var(--verde-fondo);
+}
+
+.dia.hoy.con-citas {
+    border-color: var(--principal);
+}
+
+.numero-dia {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Nombre del cliente dentro del día */
+.cliente-dia {
+    display: block;
+    padding: 1px 3px;
+    border-radius: 4px;
+    background-color: var(--principal);
+    color: #FFFFFF;
+    font-size: 9px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mas-dia {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--gris);
+}
+
+.ayuda-calendario {
+    margin-top: 10px;
+}
+
+/* Botones de cada cita: Google Calendar, editar y borrar */
+.acciones-cita {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.boton-chico {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.lista-dia {
+    margin-top: 16px;
+}
+
+/* Botón flotante del micrófono (arriba del menú de abajo) */
+.boton-microfono {
+    position: fixed;
+    right: 16px;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border: 2px solid #FFFFFF;
+    border-radius: 50%;
+    background-color: var(--principal);
+    color: #FFFFFF;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+
+.boton-microfono .icono {
+    width: 24px;
+    height: 24px;
+}
+
+/* Mientras graba se pone rojo y "late" */
+.boton-microfono.grabando {
+    background-color: var(--rojo);
+    animation: latido 1.2s ease-in-out infinite;
+}
+
+@keyframes latido {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+/* Tarjeta que muestra lo que se va escuchando */
+.tarjeta-voz {
+    position: fixed;
+    right: 16px;
+    bottom: calc(156px + env(safe-area-inset-bottom));
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 300px;
+    max-width: calc(100% - 32px);
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.texto-voz {
+    min-height: 40px;
+    max-height: 96px;
+    padding: 8px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background-color: var(--fondo-gris);
+    font-size: 13px;
+    overflow-y: auto;
+}
+
+/* Barritas que suben y bajan mientras se graba */
+.ondas {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 18px;
+}
+
+.ondas span {
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--rojo);
+    animation: onda 0.9s ease-in-out infinite;
+}
+
+.ondas span:nth-child(2) { animation-delay: 0.15s; }
+.ondas span:nth-child(3) { animation-delay: 0.3s; }
+.ondas span:nth-child(4) { animation-delay: 0.45s; }
+.ondas span:nth-child(5) { animation-delay: 0.6s; }
+
+@keyframes onda {
+    0%, 100% { height: 4px; }
+    50% { height: 18px; }
+}
+
+/* En la página de Citas se deja más espacio abajo para que el micrófono no tape el contenido */
+.con-microfono {
+    padding-bottom: 170px;
 }
 
 /* Cuadro gris con un dato (duración y precio de cada servicio) */

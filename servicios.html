@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Servicios</title>
+    <link rel="icon" href="imagenes/logo.png">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <!-- PÁGINA DE SERVICIOS: la lista de servicios que ofrece el negocio con su precio. -->
+    <!-- Son las opciones que salen al registrar y al agendar citas. -->
+    <div id="encabezado"></div>
+
+    <main class="contenedor">
+        <div class="titulo-seccion">
+            <div class="titulo-con-icono">
+                <span class="circulo grande"><span data-icono="tijeras"></span></span>
+                <div>
+                    <h2>Servicios</h2>
+                    <p class="gris chico" id="cuantos-servicios">Cargando...</p>
+                </div>
+            </div>
+            <button type="button" class="boton" onclick="nuevoServicio()">
+                <span data-icono="mas"></span> Agregar
+            </button>
+        </div>
+
+        <div class="tarjeta vacio" id="sin-servicios" hidden>No hay servicios. Toca "Agregar" para empezar.</div>
+
+        <!-- UNA TARJETA POR SERVICIO (1, 2 o 3 columnas según la pantalla) -->
+        <div class="cuadricula" id="lista-servicios"></div>
+
+        <div id="pie"></div>
+    </main>
+
+    <!-- CUADRO PARA AGREGAR O EDITAR UN SERVICIO -->
+    <dialog id="dialogo-servicio">
+        <form class="dialogo-contenido" id="formulario-servicio" onsubmit="guardarServicio(event)">
+            <h3 id="servicio-titulo">Nuevo servicio</h3>
+            <p class="descripcion" id="servicio-descripcion">Agrega un servicio para poder elegirlo al registrar.</p>
+
+            <input type="hidden" name="id" id="servicio-id" value="0">
+
+            <label for="nombre">Nombre del servicio</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej. Corte de cabello" maxlength="100" required autocomplete="off">
+
+            <label for="descripcion">Descripción (opcional)</label>
+            <input type="text" id="descripcion" name="descripcion" placeholder="Ej. Corte clásico con máquina y tijera" maxlength="255" autocomplete="off">
+
+            <div class="dos-campos">
+                <div>
+                    <label for="duracion">Duración (min)</label>
+                    <input type="number" id="duracion" name="duracion" step="1" min="0" placeholder="30" inputmode="numeric">
+                </div>
+                <div>
+                    <label for="precio">Precio</label>
+                    <input type="number" id="precio" name="precio" step="0.01" min="0.01" placeholder="0.00" inputmode="decimal" required>
+                </div>
+            </div>
+
+            <p class="texto-error" id="error-servicio" hidden></p>
+
+            <div class="dialogo-botones">
+                <button type="submit" class="boton boton-ancho" id="servicio-boton">Guardar servicio</button>
+            </div>
+
+            <button type="button" class="cerrar" onclick="cerrarDialogo('dialogo-servicio')">&times;</button>
+        </form>
+    </dialog>
+
+    <script src="api/configuracion.php"></script>
+    <script src="funciones.js"></script>
+    <script src="componentes.js"></script>
+    <script>
+        // Los servicios que llegan de la base de datos
+        let servicios = [];
+
+        // PIDE LOS SERVICIOS Y LOS MUESTRA
+        async function cargarServicios() {
+            let datos = await pedir("api/servicios.php");
+            if (!datos.ok) {
+                mostrarAviso(datos.error, true);
+                return;
+            }
+
+            servicios = datos.servicios;
+            document.getElementById("cuantos-servicios").textContent =
+                plural(servicios.length, "servicio", "servicios") + " · son las opciones que salen al registrar";
+            document.getElementById("sin-servicios").hidden = (servicios.length > 0);
+
+            let lugar = document.getElementById("lista-servicios");
+            lugar.innerHTML = "";
+            for (let i = 0; i < servicios.length; i++) {
+                lugar.appendChild(tarjetaServicio(servicios[i]));
+            }
+        }
+
+        // Arma la tarjeta de un servicio: nombre, descripción, duración, precio y botones
+        function tarjetaServicio(servicio) {
+            let tarjeta = crear("div", "tarjeta ficha");
+
+            let arriba = crear("div", "renglon");
+
+            let titulo = crear("div", "titulo-con-icono");
+            let circulo = crear("span", "circulo");
+            circulo.innerHTML = icono("tijeras");
+            let textos = crear("div");
+            textos.appendChild(crear("p", "negrita cortar", servicio.nombre));
+            textos.appendChild(crear("p", "gris chico cortar", servicio.descripcion));
+            titulo.appendChild(circulo);
+            titulo.appendChild(textos);
+
+            let botones = crear("div", "celda-flex");
+            let editar = crear("button", "boton-icono");
+            editar.type = "button";
+            editar.title = "Editar servicio";
+            editar.innerHTML = icono("lapiz");
+            editar.addEventListener("click", function () {
+                editarServicio(servicio.id);
+            });
+            let borrar = crear("button", "boton-icono rojo");
+            borrar.type = "button";
+            borrar.title = "Eliminar servicio";
+            borrar.innerHTML = icono("basura");
+            borrar.addEventListener("click", function () {
+                borrarServicio(servicio);
+            });
+            botones.appendChild(editar);
+            botones.appendChild(borrar);
+
+            arriba.appendChild(titulo);
+            arriba.appendChild(botones);
+
+            let abajo = crear("div", "renglon-gris");
+            let duracion = crear("span", "con-icono gris");
+            duracion.innerHTML = icono("reloj");
+            duracion.appendChild(document.createTextNode(" " + servicio.duracion + " min"));
+            abajo.appendChild(duracion);
+            abajo.appendChild(crear("strong", "precio", dinero(servicio.precio)));
+
+            tarjeta.appendChild(arriba);
+            tarjeta.appendChild(abajo);
+            return tarjeta;
+        }
+
+        // Abre el cuadro vacío para agregar un servicio nuevo
+        function nuevoServicio() {
+            document.getElementById("servicio-id").value = 0;
+            document.getElementById("nombre").value = "";
+            document.getElementById("descripcion").value = "";
+            document.getElementById("duracion").value = 30;
+            document.getElementById("precio").value = "";
+
+            document.getElementById("servicio-titulo").textContent = "Nuevo servicio";
+            document.getElementById("servicio-descripcion").textContent = "Agrega un servicio para poder elegirlo al registrar.";
+            document.getElementById("servicio-boton").textContent = "Guardar servicio";
+            mostrarError("error-servicio", "");
+            abrirDialogo("dialogo-servicio");
+        }
+
+        // Abre el cuadro con los datos del servicio para cambiarlos
+        function editarServicio(id) {
+            let servicio = buscarPorId(servicios, id);
+
+            document.getElementById("servicio-id").value = servicio.id;
+            document.getElementById("nombre").value = servicio.nombre;
+            document.getElementById("descripcion").value = servicio.descripcion;
+            document.getElementById("duracion").value = servicio.duracion;
+            document.getElementById("precio").value = servicio.precio;
+
+            document.getElementById("servicio-titulo").textContent = "Editar servicio";
+            document.getElementById("servicio-descripcion").textContent = "Cambia el nombre, la duración o el precio. Los registros que ya se hicieron no cambian.";
+            document.getElementById("servicio-boton").textContent = "Guardar cambios";
+            mostrarError("error-servicio", "");
+            abrirDialogo("dialogo-servicio");
+        }
+
+        // GUARDAR: manda el formulario a api/servicios.php
+        async function guardarServicio(evento) {
+            evento.preventDefault();
+
+            let datos = new FormData(document.getElementById("formulario-servicio"));
+            datos.append("accion", "guardar");
+
+            let respuesta = await pedir("api/servicios.php", datos);
+            if (!respuesta.ok) {
+                mostrarError("error-servicio", respuesta.error);
+                return;
+            }
+
+            cerrarDialogo("dialogo-servicio");
+            mostrarAviso(respuesta.mensaje);
+            cargarServicios();
+        }
+
+        // BORRAR: pregunta primero
+        async function borrarServicio(servicio) {
+            if (!confirmarBorrado("este servicio", servicio.nombre)) {
+                return;
+            }
+
+            let datos = new FormData();
+            datos.append("accion", "borrar");
+            datos.append("id", servicio.id);
+
+            let respuesta = await pedir("api/servicios.php", datos);
+            avisoDeRespuesta(respuesta);
+            cargarServicios();
+        }
+
+        cargarServicios();
+    </script>
+</body>
+</html>

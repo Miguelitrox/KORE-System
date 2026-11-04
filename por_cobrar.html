@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Por cobrar</title>
+    <link rel="icon" href="imagenes/logo.png">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <!-- DEUDAS > POR COBRAR: lo que me deben. -->
+    <!-- Aquí salen los registros que quedaron fiados (se crean solos al registrar) y las deudas que agrego a mano. -->
+    <!-- En cuanto una deuda se termina de pagar, sale de esta lista. -->
+    <div id="encabezado"></div>
+
+    <main class="contenedor">
+        <div id="pestanas-deudas"></div>
+
+        <div class="titulo-seccion">
+            <div class="titulo-con-icono">
+                <span class="circulo grande verde"><span data-icono="cobrar"></span></span>
+                <div>
+                    <h2>Deudas por cobrar</h2>
+                    <p class="gris chico">Lo que te deben (fiados y préstamos)</p>
+                </div>
+            </div>
+            <button type="button" class="boton boton-verde" onclick="nuevaDeuda()">
+                <span data-icono="mas"></span> Agregar
+            </button>
+        </div>
+
+        <!-- RESUMEN -->
+        <div class="resumen tres">
+            <div class="tarjeta chica">
+                <p class="gris chico">Total</p>
+                <p class="numero" id="suma-total">$0.00</p>
+            </div>
+            <div class="tarjeta chica">
+                <p class="gris chico">Pagado</p>
+                <p class="numero texto-verde" id="suma-abonado">$0.00</p>
+            </div>
+            <div class="tarjeta chica">
+                <p class="gris chico">Pendiente</p>
+                <p class="numero texto-amarillo" id="suma-pendiente">$0.00</p>
+            </div>
+        </div>
+
+        <!-- VISTA CELULAR: una tarjeta por deuda -->
+        <div class="solo-celular" id="tarjetas-deudas"></div>
+
+        <!-- VISTA COMPUTADORA: tabla -->
+        <div class="solo-computadora tabla-caja">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Detalle</th>
+                        <th class="derecha">Monto total</th>
+                        <th class="derecha">Pagado</th>
+                        <th class="derecha">Pendiente</th>
+                        <th>Estado</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-deudas"></tbody>
+                <tfoot id="totales-tabla" hidden>
+                    <tr>
+                        <td colspan="2" class="derecha">TOTALES:</td>
+                        <td class="derecha" id="tabla-total"></td>
+                        <td class="derecha texto-verde" id="tabla-abonado"></td>
+                        <td class="derecha texto-amarillo" id="tabla-pendiente"></td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div id="pie"></div>
+    </main>
+
+    <!-- CUADRO PARA AGREGAR O EDITAR UNA DEUDA -->
+    <dialog id="dialogo-deuda">
+        <form class="dialogo-contenido" id="formulario-deuda" onsubmit="guardarDeuda(event)">
+            <h3 id="deuda-titulo">Nueva deuda por cobrar</h3>
+            <p class="descripcion" id="deuda-descripcion">Registra dinero que te deben (que no venga de un registro fiado).</p>
+
+            <input type="hidden" name="id" id="deuda-id" value="0">
+
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" name="fecha" required>
+
+            <label for="nombre">Quién debe</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Nombre" maxlength="150" required autocomplete="off">
+
+            <label for="comentario">Comentario</label>
+            <input type="text" id="comentario" name="comentario" placeholder="Descripción" maxlength="255" autocomplete="off">
+
+            <label for="total">Monto total</label>
+            <input type="number" id="total" name="total" step="0.01" min="0.01" placeholder="0.00" inputmode="decimal" required>
+
+            <p class="texto-error" id="error-deuda" hidden></p>
+
+            <div class="dialogo-botones">
+                <button type="submit" class="boton boton-verde boton-ancho" id="deuda-boton">Guardar deuda</button>
+            </div>
+
+            <button type="button" class="cerrar" onclick="cerrarDialogo('dialogo-deuda')">&times;</button>
+        </form>
+    </dialog>
+
+    <!-- CUADRO PARA ABONAR -->
+    <dialog id="dialogo-abono">
+        <form class="dialogo-contenido" id="formulario-abono" onsubmit="guardarAbono(event)">
+            <h3>Abonar deuda por cobrar</h3>
+            <p class="descripcion" id="abono-descripcion"></p>
+
+            <input type="hidden" name="id" id="abono-id">
+
+            <label for="monto">¿Cuánto desea abonar?</label>
+            <input type="number" id="monto" name="monto" step="0.01" min="0.01" placeholder="0.00" inputmode="decimal" required autofocus>
+
+            <p class="texto-error" id="error-abono" hidden></p>
+
+            <div class="dialogo-botones">
+                <button type="button" class="boton boton-borde" onclick="cerrarDialogo('dialogo-abono')">Cancelar</button>
+                <button type="submit" class="boton">Confirmar abono</button>
+            </div>
+
+            <button type="button" class="cerrar" onclick="cerrarDialogo('dialogo-abono')">&times;</button>
+        </form>
+    </dialog>
+
+    <script src="api/configuracion.php"></script>
+    <script src="funciones.js"></script>
+    <script src="componentes.js"></script>
+    <script>
+        // Las deudas que llegan de la base de datos
+        let deudas = [];
+
+        // PIDE LAS DEUDAS PENDIENTES Y LAS MUESTRA
+        async function cargarDeudas() {
+            let datos = await pedir("api/deudas_cobrar.php");
+            if (!datos.ok) {
+                mostrarAviso(datos.error, true);
+                return;
+            }
+
+            deudas = datos.deudas;
+
+            document.getElementById("suma-total").textContent = dinero(datos.suma_total);
+            document.getElementById("suma-abonado").textContent = dinero(datos.suma_abonado);
+            document.getElementById("suma-pendiente").textContent = dinero(datos.suma_pendiente);
+            document.getElementById("tabla-total").textContent = dinero(datos.suma_total);
+            document.getElementById("tabla-abonado").textContent = dinero(datos.suma_abonado);
+            document.getElementById("tabla-pendiente").textContent = dinero(datos.suma_pendiente);
+            document.getElementById("totales-tabla").hidden = (deudas.length == 0);
+
+            let tarjetas = document.getElementById("tarjetas-deudas");
+            let tabla = document.getElementById("tabla-deudas");
+            tarjetas.innerHTML = "";
+            tabla.innerHTML = "";
+
+            if (deudas.length == 0) {
+                tarjetas.appendChild(crear("div", "tarjeta vacio", "No hay deudas por cobrar registradas."));
+                let fila = crear("tr");
+                let celda = crear("td", "vacio", "No hay deudas por cobrar registradas.");
+                celda.colSpan = 8;
+                fila.appendChild(celda);
+                tabla.appendChild(fila);
+            }
+
+            for (let i = 0; i < deudas.length; i++) {
+                tarjetas.appendChild(tarjetaDeuda(deudas[i]));
+                tabla.appendChild(filaDeuda(deudas[i]));
+            }
+        }
+
+        // Botones de editar y borrar (solo para las deudas agregadas a mano, no las de un fiado)
+        function botonesDeuda(deuda) {
+            let botones = crear("div", "celda-flex");
+            if (deuda.atencion_id != null) {
+                return botones;
+            }
+
+            let editar = crear("button", "boton-icono");
+            editar.type = "button";
+            editar.title = "Editar deuda";
+            editar.innerHTML = icono("lapiz");
+            editar.addEventListener("click", function () {
+                editarDeuda(deuda.id);
+            });
+
+            let borrar = crear("button", "boton-icono rojo");
+            borrar.type = "button";
+            borrar.title = "Eliminar deuda";
+            borrar.innerHTML = icono("basura");
+            borrar.addEventListener("click", function () {
+                borrarDeuda(deuda);
+            });
+
+            botones.appendChild(editar);
+            botones.appendChild(borrar);
+            return botones;
+        }
+
+        function botonAbonar(deuda) {
+            let boton = crear("button", "boton boton-borde");
+            boton.type = "button";
+            boton.innerHTML = icono("monedas") + " Abonar";
+            boton.addEventListener("click", function () {
+                abrirAbono(deuda.id);
+            });
+            return boton;
+        }
+
+        // Un dato chiquito con su nombre arriba (Total, Pagado, Pendiente)
+        function dato(nombre, valor, clase) {
+            let caja = crear("div");
+            caja.appendChild(crear("p", "nombre-dato gris", nombre));
+            caja.appendChild(crear("p", "negrita " + clase, valor));
+            return caja;
+        }
+
+        // TARJETA PARA CELULAR
+        function tarjetaDeuda(deuda) {
+            let tarjeta = crear("div", "tarjeta ficha");
+
+            let arriba = crear("div", "renglon");
+            let textos = crear("div");
+            textos.appendChild(crear("p", "negrita cortar", deuda.nombre));
+            textos.appendChild(crear("p", "gris chico cortar", deuda.comentario));
+            let derecha = botonesDeuda(deuda);
+            derecha.insertBefore(crear("span", "etiqueta pendiente", "Pendiente"), derecha.firstChild);
+            arriba.appendChild(textos);
+            arriba.appendChild(derecha);
+
+            let datos = crear("div", "tres-campos");
+            datos.appendChild(dato("Total", dinero(deuda.total), ""));
+            datos.appendChild(dato("Pagado", dinero(deuda.abonado), "texto-verde"));
+            datos.appendChild(dato("Pendiente", dinero(deuda.total - deuda.abonado), "texto-amarillo"));
+
+            let abonar = botonAbonar(deuda);
+            abonar.className = "boton boton-borde boton-ancho";
+
+            tarjeta.appendChild(arriba);
+            tarjeta.appendChild(datos);
+            tarjeta.appendChild(abonar);
+            return tarjeta;
+        }
+
+        // RENGLÓN DE LA TABLA PARA COMPUTADORA
+        function filaDeuda(deuda) {
+            let fila = crear("tr");
+
+            let comentario = deuda.comentario;
+            if (comentario == "") {
+                comentario = "—";
+            }
+
+            fila.appendChild(crear("td", "negrita cortar", deuda.nombre));
+            fila.appendChild(crear("td", "gris cortar", comentario));
+            fila.appendChild(crear("td", "derecha", dinero(deuda.total)));
+            fila.appendChild(crear("td", "derecha texto-verde", dinero(deuda.abonado)));
+            fila.appendChild(crear("td", "derecha texto-amarillo", dinero(deuda.total - deuda.abonado)));
+
+            let estado = crear("td");
+            estado.appendChild(crear("span", "etiqueta pendiente", "Pendiente"));
+            fila.appendChild(estado);
+
+            let abonar = crear("td");
+            abonar.appendChild(botonAbonar(deuda));
+            fila.appendChild(abonar);
+
+            let botones = crear("td");
+            botones.appendChild(botonesDeuda(deuda));
+            fila.appendChild(botones);
+            return fila;
+        }
+
+        function nuevaDeuda() {
+            document.getElementById("deuda-id").value = 0;
+            document.getElementById("fecha").value = hoy();
+            document.getElementById("nombre").value = "";
+            document.getElementById("comentario").value = "";
+            document.getElementById("total").value = "";
+
+            document.getElementById("deuda-titulo").textContent = "Nueva deuda por cobrar";
+            document.getElementById("deuda-descripcion").textContent = "Registra dinero que te deben (que no venga de un registro fiado).";
+            document.getElementById("deuda-boton").textContent = "Guardar deuda";
+            mostrarError("error-deuda", "");
+            abrirDialogo("dialogo-deuda");
+        }
+
+        function editarDeuda(id) {
+            let deuda = buscarPorId(deudas, id);
+
+            document.getElementById("deuda-id").value = deuda.id;
+            document.getElementById("fecha").value = deuda.fecha;
+            document.getElementById("nombre").value = deuda.nombre;
+            document.getElementById("comentario").value = deuda.comentario;
+            document.getElementById("total").value = deuda.total;
+
+            document.getElementById("deuda-titulo").textContent = "Editar deuda por cobrar";
+            document.getElementById("deuda-descripcion").textContent = "Cambia los datos de la deuda.";
+            document.getElementById("deuda-boton").textContent = "Guardar cambios";
+            mostrarError("error-deuda", "");
+            abrirDialogo("dialogo-deuda");
+        }
+
+        function abrirAbono(id) {
+            let deuda = buscarPorId(deudas, id);
+            let pendiente = deuda.total - deuda.abonado;
+
+            document.getElementById("abono-id").value = deuda.id;
+            document.getElementById("abono-descripcion").textContent = deuda.nombre + " · Pendiente: " + dinero(pendiente);
+            document.getElementById("monto").value = "";
+            document.getElementById("monto").max = pendiente.toFixed(2);
+            mostrarError("error-abono", "");
+            abrirDialogo("dialogo-abono");
+        }
+
+        // GUARDAR, ABONAR Y BORRAR: mandan los datos a api/deudas_cobrar.php
+        async function guardarDeuda(evento) {
+            evento.preventDefault();
+            let datos = new FormData(document.getElementById("formulario-deuda"));
+            datos.append("accion", "guardar");
+
+            let respuesta = await pedir("api/deudas_cobrar.php", datos);
+            if (!respuesta.ok) {
+                mostrarError("error-deuda", respuesta.error);
+                return;
+            }
+            cerrarDialogo("dialogo-deuda");
+            mostrarAviso(respuesta.mensaje);
+            cargarDeudas();
+        }
+
+        async function guardarAbono(evento) {
+            evento.preventDefault();
+            let datos = new FormData(document.getElementById("formulario-abono"));
+            datos.append("accion", "abonar");
+
+            let respuesta = await pedir("api/deudas_cobrar.php", datos);
+            if (!respuesta.ok) {
+                mostrarError("error-abono", respuesta.error);
+                return;
+            }
+            cerrarDialogo("dialogo-abono");
+            mostrarAviso(respuesta.mensaje);
+            cargarDeudas();
+        }
+
+        async function borrarDeuda(deuda) {
+            if (!confirmarBorrado("esta deuda", deuda.nombre)) {
+                return;
+            }
+            let datos = new FormData();
+            datos.append("accion", "borrar");
+            datos.append("id", deuda.id);
+
+            avisoDeRespuesta(await pedir("api/deudas_cobrar.php", datos));
+            cargarDeudas();
+        }
+
+        cargarDeudas();
+    </script>
+</body>
+</html>

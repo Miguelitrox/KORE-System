@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Reportes</title>
+    <link rel="icon" href="imagenes/logo.png">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <!-- PÁGINA DE REPORTES: cuánto se vendió, qué servicios se hicieron más, -->
+    <!-- cómo pagaron los clientes y el historial de todos los registros. -->
+    <div id="encabezado"></div>
+
+    <main class="contenedor">
+        <div class="titulo-seccion">
+            <div class="titulo-con-icono">
+                <span class="circulo grande"><span data-icono="grafica"></span></span>
+                <div>
+                    <h2>Reportes</h2>
+                    <p class="gris chico">Ventas y servicios del negocio</p>
+                </div>
+            </div>
+            <!-- Al cambiar la opción se vuelven a pedir los datos de esos días -->
+            <select id="dias" class="select-chico" onchange="cargarReportes()">
+                <option value="1">Hoy</option>
+                <option value="7" selected>Últimos 7 días</option>
+                <option value="30">Últimos 30 días</option>
+                <option value="90">Últimos 3 meses</option>
+                <option value="180">Últimos 6 meses</option>
+                <option value="365">Último año</option>
+            </select>
+        </div>
+
+        <!-- RESUMEN DEL PERIODO -->
+        <div class="resumen">
+            <div class="tarjeta chica">
+                <p class="gris chico">Total vendido</p>
+                <p class="numero texto-verde" id="total-vendido">$0.00</p>
+            </div>
+            <div class="tarjeta chica">
+                <p class="gris chico">Clientes atendidos</p>
+                <p class="numero" id="clientes">0</p>
+            </div>
+            <div class="tarjeta chica">
+                <p class="gris chico">Servicios realizados</p>
+                <p class="numero" id="servicios-realizados">0</p>
+            </div>
+            <div class="tarjeta chica">
+                <p class="gris chico">Ticket promedio</p>
+                <p class="numero" id="promedio">$0.00</p>
+            </div>
+        </div>
+
+        <div class="dos-columnas">
+            <!-- SERVICIOS MÁS REALIZADOS -->
+            <div class="tarjeta">
+                <h3 class="tarjeta-titulo">
+                    <span class="circulo"><span data-icono="tijeras"></span></span>
+                    Servicios más realizados
+                </h3>
+                <p class="vacio" id="sin-servicios" hidden>Sin servicios en este periodo.</p>
+                <ol class="ranking" id="mas-realizados"></ol>
+            </div>
+
+            <!-- VENTAS POR FORMA DE PAGO -->
+            <div class="tarjeta">
+                <h3 class="tarjeta-titulo">
+                    <span class="circulo"><span data-icono="cartera"></span></span>
+                    Por forma de pago
+                </h3>
+                <p class="vacio" id="sin-pagos" hidden>Sin ventas en este periodo.</p>
+                <ul class="ranking" id="por-pago"></ul>
+            </div>
+        </div>
+
+        <!-- HISTORIAL DE REGISTROS -->
+        <div class="tarjeta">
+            <h3 class="tarjeta-titulo">
+                <span class="circulo"><span data-icono="historial"></span></span>
+                Historial de ventas
+            </h3>
+            <p class="vacio" id="sin-registros" hidden>No hay ventas en este periodo.</p>
+            <ul class="lista" id="historial"></ul>
+        </div>
+
+        <div id="pie"></div>
+    </main>
+
+    <script src="api/configuracion.php"></script>
+    <script src="funciones.js"></script>
+    <script src="componentes.js"></script>
+    <script>
+        // PIDE LOS REPORTES DE LOS DÍAS ELEGIDOS Y LOS MUESTRA
+        async function cargarReportes() {
+            let dias = document.getElementById("dias").value;
+            let datos = await pedir("api/reportes.php?dias=" + dias);
+            if (!datos.ok) {
+                mostrarAviso(datos.error, true);
+                return;
+            }
+
+            document.getElementById("total-vendido").textContent = dinero(datos.total_vendido);
+            document.getElementById("clientes").textContent = datos.registros.length;
+            document.getElementById("servicios-realizados").textContent = datos.total_servicios;
+            document.getElementById("promedio").textContent = dinero(datos.promedio);
+
+            dibujarMasRealizados(datos.mas_realizados);
+            dibujarPorPago(datos.por_pago);
+            dibujarHistorial(datos.registros);
+        }
+
+        // Renglón de una lista tipo ranking: nombre, "· 3 veces" y cantidad a la derecha
+        function renglonRanking(nombre, detalle, cantidad) {
+            let renglon = crear("li");
+            let texto = crear("span", "nombre-ranking", nombre + " ");
+            texto.appendChild(crear("span", "gris chico", "· " + detalle));
+            renglon.appendChild(texto);
+            renglon.appendChild(crear("strong", "cantidad", cantidad));
+            return renglon;
+        }
+
+        function dibujarMasRealizados(lista) {
+            let lugar = document.getElementById("mas-realizados");
+            lugar.innerHTML = "";
+            document.getElementById("sin-servicios").hidden = (lista.length > 0);
+
+            for (let i = 0; i < lista.length; i++) {
+                let renglon = renglonRanking(lista[i].nombre, plural(lista[i].veces, "vez", "veces"), dinero(lista[i].total));
+                // El número de lugar (1, 2, 3...) va al principio
+                renglon.insertBefore(crear("span", "posicion", i + 1), renglon.firstChild);
+                lugar.appendChild(renglon);
+            }
+        }
+
+        function dibujarPorPago(lista) {
+            let lugar = document.getElementById("por-pago");
+            lugar.innerHTML = "";
+            document.getElementById("sin-pagos").hidden = (lista.length > 0);
+
+            for (let i = 0; i < lista.length; i++) {
+                let renglon = renglonRanking(CONFIG.formas_pago[lista[i].metodo_pago], plural(lista[i].veces, "cliente", "clientes"), dinero(lista[i].total));
+                if (lista[i].metodo_pago == "fiado") {
+                    renglon.lastChild.className = "cantidad texto-amarillo";
+                }
+                lugar.appendChild(renglon);
+            }
+        }
+
+        function dibujarHistorial(registros) {
+            let lugar = document.getElementById("historial");
+            lugar.innerHTML = "";
+            document.getElementById("sin-registros").hidden = (registros.length > 0);
+
+            for (let i = 0; i < registros.length; i++) {
+                let registro = registros[i];
+                let fiado = (registro.metodo_pago == "fiado");
+
+                let renglon = crear("li", "renglon fondo-verde");
+                if (fiado) {
+                    renglon.className = "renglon fondo-amarillo";
+                }
+
+                let izquierda = crear("div");
+                izquierda.appendChild(crear("p", "lista-titulo", registro.servicios));
+                let detalle = fechaHora(registro.fecha_hora);
+                if (registro.cliente != "") {
+                    detalle = detalle + " · " + registro.cliente;
+                }
+                izquierda.appendChild(crear("p", "lista-fecha", detalle));
+
+                let derecha = crear("div", "etiquetas");
+                derecha.appendChild(crear("span", "cantidad", dinero(registro.total)));
+                if (fiado && registro.estado_fiado == "pagada") {
+                    derecha.appendChild(crear("span", "etiqueta pagada", "Fiado · Pagado"));
+                } else if (fiado) {
+                    derecha.appendChild(crear("span", "etiqueta pendiente", "Fiado · Pendiente"));
+                } else {
+                    derecha.appendChild(crear("span", "etiqueta", CONFIG.formas_pago[registro.metodo_pago]));
+                }
+
+                renglon.appendChild(izquierda);
+                renglon.appendChild(derecha);
+                lugar.appendChild(renglon);
+            }
+        }
+
+        cargarReportes();
+    </script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Registrar</title>
+    <link rel="icon" href="imagenes/logo.png">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <!-- PÁGINA PRINCIPAL: REGISTRAR los servicios que se hicieron (las ventas del día a día) -->
+    <!-- Se elige qué servicio se realizó, se pregunta si se hizo otro y al guardar se registra todo. -->
+    <div id="encabezado"></div>
+
+    <main class="contenedor">
+        <!-- VENTAS DE HOY Y BOTÓN PARA REGISTRAR -->
+        <div class="saldo">
+            <p class="saldo-titulo">Ventas de hoy</p>
+            <p class="saldo-cantidad" id="ventas-hoy">$0.00</p>
+            <p class="saldo-nota" id="resumen-hoy">0 servicios · 0 clientes</p>
+            <button type="button" class="boton boton-blanco boton-grande boton-ancho" onclick="abrirRegistro()">
+                <span data-icono="registrar"></span> REGISTRAR SERVICIO
+            </button>
+        </div>
+
+        <!-- LO QUE SE REGISTRÓ HOY -->
+        <div class="tarjeta">
+            <h3 class="tarjeta-titulo">
+                <span class="circulo"><span data-icono="historial"></span></span>
+                Registros de hoy
+            </h3>
+            <p class="vacio" id="sin-registros">Cargando...</p>
+            <ul class="lista" id="lista-registros"></ul>
+        </div>
+
+        <div id="pie"></div>
+    </main>
+
+    <!-- CUADRO PARA REGISTRAR: tiene 3 pasos y solo se ve uno a la vez -->
+    <dialog id="dialogo-registro">
+        <form class="dialogo-contenido" id="formulario-registro" onsubmit="guardarRegistro(event)">
+
+            <!-- PASO 1: elegir el servicio -->
+            <div id="paso-elegir">
+                <h3>¿Qué servicio se realizó?</h3>
+                <p class="descripcion">Toca el servicio. La lista se cambia en la pestaña Servicios.</p>
+
+                <p class="vacio" id="sin-servicios" hidden>No hay servicios todavía. <a href="servicios.html">Agrégalos aquí</a>.</p>
+
+                <!-- Aquí JavaScript pone un botón por cada servicio -->
+                <div class="opciones-servicio" id="opciones-servicio"></div>
+            </div>
+
+            <!-- PASO 2: preguntar si se hizo otro servicio -->
+            <div id="paso-otro" class="pregunta" hidden>
+                <span class="circulo enorme verde"><span data-icono="palomita"></span></span>
+                <p class="gris" id="texto-agregado"></p>
+                <h3>¿Se realizó otro servicio?</h3>
+                <div class="renglon-monto">
+                    <span class="gris" id="cantidad-parcial"></span>
+                    <strong id="total-parcial"></strong>
+                </div>
+                <div class="dialogo-botones" style="width: 100%;">
+                    <button type="button" class="boton boton-borde" onclick="mostrarPaso('paso-elegir')">Sí, agregar otro</button>
+                    <button type="button" class="boton" onclick="mostrarResumen()">No, es todo</button>
+                </div>
+            </div>
+
+            <!-- PASO 3: resumen, datos del pago y guardar -->
+            <div id="paso-resumen" hidden>
+                <h3>Resumen del registro</h3>
+                <p class="descripcion">Revisa los servicios y guarda el registro.</p>
+
+                <ul class="lista-elegidos" id="lista-elegidos"></ul>
+
+                <div class="renglon-monto">
+                    <span class="negrita">Total</span>
+                    <strong id="total-final"></strong>
+                </div>
+
+                <label for="cliente">Cliente (opcional)</label>
+                <input type="text" id="cliente" name="cliente" maxlength="100" placeholder="Nombre del cliente" autocomplete="off">
+
+                <label for="pago">Forma de pago</label>
+                <!-- Las opciones salen de configuracion.php -->
+                <select id="pago" name="pago"></select>
+
+                <p class="texto-error" id="error-registro" hidden></p>
+
+                <!-- Aquí JavaScript pone un campo escondido por cada servicio elegido -->
+                <div id="campos-servicios"></div>
+
+                <div class="dialogo-botones">
+                    <button type="button" class="boton boton-borde" onclick="mostrarPaso('paso-elegir')">
+                        <span data-icono="mas"></span> Agregar otro
+                    </button>
+                    <button type="submit" class="boton">Guardar registro</button>
+                </div>
+            </div>
+
+            <button type="button" class="cerrar" onclick="cerrarDialogo('dialogo-registro')">&times;</button>
+        </form>
+    </dialog>
+
+    <script src="api/configuracion.php"></script>
+    <script src="funciones.js"></script>
+    <script src="componentes.js"></script>
+    <script>
+        // Los servicios que llegan de la base de datos
+        let servicios = [];
+
+        // Servicios que se van eligiendo en este registro
+        let elegidos = [];
+
+        // Las formas de pago salen de configuracion.php
+        for (let clave in CONFIG.formas_pago) {
+            let opcion = crear("option", "", CONFIG.formas_pago[clave]);
+            opcion.value = clave;
+            document.getElementById("pago").appendChild(opcion);
+        }
+
+        // PIDE LOS DATOS Y LOS MUESTRA
+        async function cargarDatos() {
+            let datos = await pedir("api/registrar.php");
+            if (!datos.ok) {
+                document.getElementById("sin-registros").textContent = datos.error;
+                return;
+            }
+
+            servicios = datos.servicios;
+
+            document.getElementById("ventas-hoy").textContent = dinero(datos.ventas_hoy);
+            document.getElementById("resumen-hoy").textContent =
+                plural(datos.servicios_hoy, "servicio", "servicios") + " · " + plural(datos.registros.length, "cliente", "clientes");
+
+            dibujarRegistros(datos.registros);
+            dibujarOpcionesServicio();
+        }
+
+        // Lista de "Registros de hoy"
+        function dibujarRegistros(registros) {
+            let lista = document.getElementById("lista-registros");
+            lista.innerHTML = "";
+
+            let vacio = document.getElementById("sin-registros");
+            vacio.textContent = "Todavía no hay registros hoy. Toca \"Registrar servicio\" para empezar.";
+            vacio.hidden = (registros.length > 0);
+
+            for (let i = 0; i < registros.length; i++) {
+                let registro = registros[i];
+                let fiado = (registro.metodo_pago == "fiado");
+
+                let renglon = crear("li", "renglon fondo-verde");
+                if (fiado) {
+                    renglon.className = "renglon fondo-amarillo";
+                }
+
+                // Izquierda: servicios, hora y cliente
+                let izquierda = crear("div");
+                izquierda.appendChild(crear("p", "lista-titulo", registro.servicios));
+                let detalle = soloHora(registro.fecha_hora);
+                if (registro.cliente != "") {
+                    detalle = detalle + " · " + registro.cliente;
+                }
+                izquierda.appendChild(crear("p", "lista-fecha", detalle));
+
+                // Derecha: total y forma de pago
+                let derecha = crear("div", "etiquetas");
+                derecha.appendChild(crear("span", "cantidad", dinero(registro.total)));
+                let etiqueta = crear("span", "etiqueta", CONFIG.formas_pago[registro.metodo_pago]);
+                if (fiado) {
+                    etiqueta.className = "etiqueta amarillo";
+                }
+                derecha.appendChild(etiqueta);
+
+                renglon.appendChild(izquierda);
+                renglon.appendChild(derecha);
+                lista.appendChild(renglon);
+            }
+        }
+
+        // Un botón por cada servicio en el paso 1
+        function dibujarOpcionesServicio() {
+            let lugar = document.getElementById("opciones-servicio");
+            lugar.innerHTML = "";
+            document.getElementById("sin-servicios").hidden = (servicios.length > 0);
+
+            for (let i = 0; i < servicios.length; i++) {
+                let servicio = servicios[i];
+                let boton = crear("button", "opcion-servicio");
+                boton.type = "button";
+                boton.appendChild(crear("span", "negrita", servicio.nombre));
+                boton.appendChild(crear("span", "gris chico", servicio.duracion + " min"));
+                boton.appendChild(crear("span", "precio", dinero(servicio.precio)));
+                boton.addEventListener("click", function () {
+                    elegirServicio(servicio.id);
+                });
+                lugar.appendChild(boton);
+            }
+        }
+
+        // Abre el cuadro empezando desde el paso 1
+        function abrirRegistro() {
+            elegidos = [];
+            document.getElementById("cliente").value = "";
+            document.getElementById("pago").value = "efectivo";
+            mostrarPaso("paso-elegir");
+            abrirDialogo("dialogo-registro");
+
+            // Al abrir, el navegador marca el primer servicio; se le quita para que no parezca elegido
+            document.activeElement.blur();
+        }
+
+        // Muestra solo el paso que se pide y esconde los otros dos
+        function mostrarPaso(paso) {
+            document.getElementById("paso-elegir").hidden = (paso != "paso-elegir");
+            document.getElementById("paso-otro").hidden = (paso != "paso-otro");
+            document.getElementById("paso-resumen").hidden = (paso != "paso-resumen");
+        }
+
+        // Suma los precios de los servicios elegidos
+        function sumarTotal() {
+            let total = 0;
+            for (let i = 0; i < elegidos.length; i++) {
+                total = total + Number(elegidos[i].precio);
+            }
+            return total;
+        }
+
+        // PASO 1 → PASO 2: se agrega el servicio y se pregunta si hubo otro
+        function elegirServicio(id) {
+            let servicio = buscarPorId(servicios, id);
+            elegidos.push(servicio);
+
+            document.getElementById("texto-agregado").textContent = "Se agregó: " + servicio.nombre;
+            document.getElementById("cantidad-parcial").textContent = plural(elegidos.length, "servicio", "servicios");
+            document.getElementById("total-parcial").textContent = dinero(sumarTotal());
+            mostrarPaso("paso-otro");
+        }
+
+        // PASO 3: se arma la lista de servicios elegidos con un botón para quitar cada uno
+        function mostrarResumen() {
+            let lista = document.getElementById("lista-elegidos");
+            let campos = document.getElementById("campos-servicios");
+            lista.innerHTML = "";
+            campos.innerHTML = "";
+
+            for (let i = 0; i < elegidos.length; i++) {
+                // Renglón que se ve: nombre, precio y botón para quitar
+                let renglon = crear("li");
+                renglon.appendChild(crear("span", "", elegidos[i].nombre));
+                renglon.appendChild(crear("strong", "", dinero(elegidos[i].precio)));
+
+                let quitar = crear("button", "boton-icono rojo");
+                quitar.type = "button";
+                quitar.title = "Quitar servicio";
+                quitar.innerHTML = "&times;";
+                quitar.addEventListener("click", function () {
+                    quitarServicio(i);
+                });
+                renglon.appendChild(quitar);
+                lista.appendChild(renglon);
+
+                // Campo escondido que se manda a PHP con el id del servicio
+                let campo = crear("input");
+                campo.type = "hidden";
+                campo.name = "servicios[]";
+                campo.value = elegidos[i].id;
+                campos.appendChild(campo);
+            }
+
+            document.getElementById("total-final").textContent = dinero(sumarTotal());
+            mostrarError("error-registro", "");
+            mostrarPaso("paso-resumen");
+        }
+
+        function quitarServicio(posicion) {
+            elegidos.splice(posicion, 1);      // lo quita de la lista
+
+            if (elegidos.length == 0) {
+                mostrarPaso("paso-elegir");
+            } else {
+                mostrarResumen();
+            }
+        }
+
+        // GUARDAR: revisa los datos y los manda a api/registrar.php
+        async function guardarRegistro(evento) {
+            evento.preventDefault();      // que no se recargue la página
+
+            let cliente = document.getElementById("cliente").value.trim();
+            let pago = document.getElementById("pago").value;
+
+            if (elegidos.length == 0) {
+                mostrarError("error-registro", "Elige al menos un servicio.");
+                return;
+            }
+            if (pago == "fiado" && cliente == "") {
+                mostrarError("error-registro", "Para dejarlo fiado escribe el nombre del cliente.");
+                return;
+            }
+
+            let datos = new FormData(document.getElementById("formulario-registro"));
+            datos.append("accion", "guardar");
+
+            let respuesta = await pedir("api/registrar.php", datos);
+            if (!respuesta.ok) {
+                mostrarError("error-registro", respuesta.error);
+                return;
+            }
+
+            cerrarDialogo("dialogo-registro");
+            mostrarAviso(respuesta.mensaje);
+            cargarDatos();
+        }
+
+        cargarDatos();
+    </script>
+</body>
+</html>

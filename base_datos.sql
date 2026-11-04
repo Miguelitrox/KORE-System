@@ -82,6 +82,18 @@ CREATE TABLE IF NOT EXISTS deudas_cobrar (
     estado VARCHAR(20) NOT NULL DEFAULT 'pendiente'
 );
 
+-- CITAS (la agenda). Se guarda el nombre del servicio por si después se borra de Servicios.
+-- hora se guarda en 24 horas (16:30) y en la página se muestra como 04:30 PM.
+CREATE TABLE IF NOT EXISTS citas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente VARCHAR(100) NOT NULL,
+    servicio_id INT NULL,
+    servicio VARCHAR(100) NOT NULL,
+    fecha DATE NOT NULL,
+    hora TIME NOT NULL,
+    duracion INT NOT NULL DEFAULT 30          -- en minutos
+);
+
 -- DEUDAS POR PAGAR (lo que yo debo: proveedores, renta...)
 CREATE TABLE IF NOT EXISTS deudas_pagar (
     id INT AUTO_INCREMENT PRIMARY KEY,
