@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurador de Agenda Digital | KORE Systems</title>
+    <link rel="icon" type="image/jpeg" href="isotipo.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="kore-core.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- LIBRERÍA TESSERACT.JS PARA OCR REAL -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+    <!-- GOOGLE CALENDAR API & GIS LIBRARIES -->
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        :root {
+            --bg-main: #0d0d0d;
+            --bg-card: #121212;
+            --bg-input: rgba(0, 0, 0, 0.5);
+            --border-color: rgba(255, 20, 147, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #ff1493;
+            --accent-hover: #e0007b;
+            --accent-light: #ff66c4;
+        }
+
+        body.light-mode {
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-input: #f8fafc;
+            --border-color: rgba(0, 0, 0, 0.12);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        @keyframes subtle-rainbow-bg {
+            0% { background-color: #0d0514; }
+            20% { background-color: #12050f; }
+            40% { background-color: #050d14; }
+            60% { background-color: #051410; }
+            80% { background-color: #141105; }
+            100% { background-color: #0d0514; }
+        }
+
+        body.light-mode.bg-rainbow-animated {
+            animation: subtle-rainbow-light 12s infinite linear !important;
+        }
+
+        @keyframes subtle-rainbow-light {
+            0% { background-color: #fcf4ff; }
+            20% { background-color: #fff4f8; }
+            40% { background-color: #f0f7ff; }
+            60% { background-color: #f0fff8; }
+            80% { background-color: #fffdf0; }
+            100% { background-color: #fcf4ff; }
+        }
+
+        .bg-rainbow-animated {
+            animation: subtle-rainbow-bg 12s infinite linear !important;
+        }
+
+        .theme-card {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        .theme-accent {
+            background: var(--accent);
+        }
+
+        .theme-accent-hover:hover {
+            filter: brightness(1.15);
+        }
+
+        .theme-text-accent {
+            color: var(--accent-light);
+        }
+
+        .glow-effect {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        @keyframes rainbow-btn-glow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .rainbow-btn-style {
+            background: linear-gradient(135deg, #ff007f, #7928ca, #0070f3, #00dfd8, #10b981, #ff007f) !important;
+            background-size: 200% 200% !important;
+            animation: rainbow-btn-glow 5s linear infinite !important;
+            color: #ffffff !important;
+        }
+
+        .rainbow-border-style {
+            border-color: #00dfd8 !important;
+            border-width: 2px !important;
+            animation: rainbow-btn-glow 5s linear infinite !important;
+        }
+
+        @keyframes highlight-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0px var(--accent); }
+            50% { transform: scale(1.03); box-shadow: 0 0 30px var(--accent); }
+            100% { transform: scale(1); box-shadow: 0 0 0px var(--accent); }
+        }
+
+        .section-pulse-effect {
+            animation: highlight-pulse 1s ease-in-out;
+        }
+
+        .step3-highlight {
+            animation: highlight-pulse 1.2s ease-in-out;
+        }
+
+        /* Animación para las barras ecualizadoras de voz */
+        @keyframes sound-wave {
+            0%, 100% { height: 4px; }
+            50% { height: 24px; }
+        }
+
+        .wave-bar {
+            width: 3px;
+            background-color: var(--accent-light);
+            animation: sound-wave 0.8s ease-in-out infinite;
+        }
+        .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.3s; }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.5);
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body id="main-body" class="font-sans antialiased min-h-screen pb-20">
+
+    <!-- ===== VERIFICACIÓN DE ACCESO (la agenda solo se ve con cuenta autorizada) ===== -->
+    <div id="auth-guard" class="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto" style="background-color: var(--bg-main);">
+        <div id="guard-loading" class="text-center space-y-3">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl theme-text-accent"></i>
+            <p class="text-xs opacity-70">Verificando tu acceso...</p>
+        </div>
+
+        <div id="guard-pending" class="hidden theme-card p-6 sm:p-8 rounded-3xl border shadow-2xl max-w-md w-full space-y-5">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 mx-auto rounded-2xl theme-accent text-white flex items-center justify-center text-2xl"><i class="fa-solid fa-hourglass-half"></i></div>
+                <h2 class="font-display font-bold text-lg">Tu cuenta está en revisión</h2>
+                <p class="text-xs opacity-75 leading-relaxed">La administración de KORE Studio debe autorizar tu acceso. En cuanto lo haga, esta pantalla se abrirá sola; no necesitas volver a registrarte.</p>
+            </div>
+            <div class="rounded-2xl border border-black/10 dark:border-white/10 text-xs divide-y divide-black/10 dark:divide-white/10" style="background-color: var(--bg-input);">
+                <div class="flex items-center gap-3 p-3"><i class="fa-regular fa-user w-4 theme-text-accent"></i><span class="opacity-60 w-16">Nombre</span><strong id="guard-name" class="flex-1 truncate"></strong></div>
+                <div class="flex items-center gap-3 p-3"><i class="fa-solid fa-at w-4 theme-text-accent"></i><span class="opacity-60 w-16">Usuario</span><strong id="guard-user" class="flex-1 truncate"></strong></div>
+                <div class="flex items-center gap-3 p-3"><i class="fa-solid fa-shield-halved w-4 theme-text-accent"></i><span class="opacity-60 w-16">Estado</span><span class="px-2 py-0.5 rounded-full border border-amber-500/50 bg-amber-500/10 text-amber-500 font-bold text-[10px]">Pendiente de autorización</span></div>
+            </div>
+            <p id="guard-notice" class="hidden text-xs rounded-xl border border-red-500/40 bg-red-500/10 text-red-500 p-3"></p>
+            <div class="space-y-2">
+                <button onclick="guardCheckNow()" id="guard-check-btn" class="theme-btn w-full py-3 rounded-xl theme-accent theme-accent-hover text-white font-bold text-xs flex items-center justify-center gap-2"><i class="fa-solid fa-rotate"></i> Verificar ahora</button>
+                <button onclick="logoutKore()" class="w-full py-3 rounded-xl border border-black/10 dark:border-white/20 font-bold text-xs hover:opacity-80">Cerrar sesión</button>
+            </div>
+            <p class="text-[10px] opacity-60 text-center">Se verifica automáticamente cada pocos segundos.</p>
+        </div>
+    </div>
+
+    <!-- ===== MODAL MI CUENTA ===== -->
+    <div id="account-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-[70] flex items-center justify-center p-4">
+        <div class="theme-card p-6 sm:p-7 rounded-3xl border shadow-2xl max-w-md w-full space-y-5 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl theme-accent text-white flex items-center justify-center text-sm"><i class="fa-solid fa-user"></i></div>
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider opacity-70">Plataforma Digital</span>
+                        <h2 class="font-display font-bold text-lg leading-tight">Mi cuenta</h2>
+                    </div>
+                </div>
+                <button onclick="closeAccountModal()" class="w-8 h-8 rounded-xl border border-black/10 dark:border-white/20 flex items-center justify-center text-xs opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="rounded-2xl border border-black/10 dark:border-white/10 text-xs divide-y divide-black/10 dark:divide-white/10" style="background-color: var(--bg-input);">
+                <div class="flex items-center gap-3 p-3"><i class="fa-regular fa-user w-4 theme-text-accent"></i><span class="opacity-60 w-16">Nombre</span><strong id="acc-name" class="flex-1 truncate"></strong></div>
+                <div class="flex items-center gap-3 p-3"><i class="fa-solid fa-at w-4 theme-text-accent"></i><span class="opacity-60 w-16">Usuario</span><strong id="acc-user" class="flex-1 truncate"></strong></div>
+                <div class="flex items-center gap-3 p-3"><i class="fa-solid fa-shield-halved w-4 theme-text-accent"></i><span class="opacity-60 w-16">Estado</span><span class="px-2 py-0.5 rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-500 font-bold text-[10px]">Con acceso</span></div>
+            </div>
+
+            <button onclick="logoutKore()" class="w-full py-3 rounded-xl border border-black/10 dark:border-white/20 font-bold text-xs hover:opacity-80 flex items-center justify-center gap-2"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+
+            <div class="rounded-2xl border border-red-500/40 bg-red-500/5 p-4 space-y-3">
+                <div>
+                    <strong class="text-xs text-red-500 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Eliminar mi cuenta</strong>
+                    <p class="text-[11px] opacity-75 leading-relaxed mt-1">Se borrará tu cuenta de forma permanente, junto con las citas guardadas en este navegador. No se puede deshacer. Para confirmar, escribe tu contraseña.</p>
+                </div>
+                <div class="relative">
+                    <input id="delete-password" type="password" placeholder="Tu contraseña" autocomplete="current-password"
+                        class="w-full rounded-xl border border-black/10 dark:border-white/20 px-3 py-2.5 pr-10 text-xs focus:outline-none focus:border-red-500" style="background-color: var(--bg-input); color: var(--text-main);">
+                    <button type="button" onclick="toggleDeletePw()" class="absolute right-1 top-0 bottom-0 w-9 opacity-60 hover:opacity-100 text-xs"><i id="delete-eye" class="fa-regular fa-eye"></i></button>
+                </div>
+                <p id="delete-error" class="hidden text-xs text-red-500"></p>
+                <button onclick="deleteMyAccount()" id="delete-btn" class="w-full py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-xs flex items-center justify-center gap-2"><i class="fa-solid fa-trash"></i> Eliminar mi cuenta definitivamente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE BIENVENIDA / INSTRUCCIONES INICIALES -->
+    <div id="welcome-modal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="theme-card p-6 sm:p-8 rounded-3xl border shadow-2xl max-w-xl w-full space-y-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-4">
+                <div class="flex items-center space-x-3">
+                    <img src="isotipo.png" alt="Isotipo Kore" class="w-9 h-9 rounded-full object-cover shadow-md border border-black/10 dark:border-white/20">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider opacity-70">Plataforma Digital</span>
+                        <h2 class="font-display font-bold text-xl">Bienvenida/o a KORE Studio</h2>
+                    </div>
+                </div>
+                <button onclick="closeWelcomeModal()"
+                    class="w-8 h-8 rounded-xl border border-black/10 dark:border-white/20 flex items-center justify-center text-xs opacity-70 hover:opacity-100 transition-all">✕</button>
+            </div>
+
+            <p class="text-xs opacity-85 leading-relaxed">
+                Tu agenda inteligente está lista para optimizar la administración de tu negocio o estudio. A continuación, te explicamos brevemente cómo funciona cada sección:
+            </p>
+
+            <div class="space-y-3.5 text-xs">
+                <div class="p-3.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-start gap-3" style="background-color: var(--bg-input);">
+                    <div class="w-6 h-6 rounded-lg theme-accent text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5 dynamic-accent-element">1</div>
+                    <div>
+                        <strong class="block mb-0.5 font-bold">Personaliza tu Agenda y Estética</strong>
+                        <span class="opacity-75 leading-relaxed">Asigna el nombre de tu proyecto y elige entre múltiples paletas de colores o el modo claro/oscuro para reflejar la identidad de tu marca.</span>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-start gap-3" style="background-color: var(--bg-input);">
+                    <div class="w-6 h-6 rounded-lg theme-accent text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5 dynamic-accent-element">2</div>
+                    <div>
+                        <strong class="block mb-0.5 font-bold">Digitalización Inteligente (OCR con IA y Voz)</strong>
+                        <span class="opacity-75 leading-relaxed">Escanea notas en papel con cámara/imagen o utiliza el <strong>Micrófono Flotante de Voz</strong> (tercera forma de agendar). Solo haz clic en el botón flotante de micrófono, di en voz alta el cliente, hora, fecha y objetivo en cualquier orden; la IA transcribirá con efecto visual de ondas, procesará y agendará automáticamente limpiando el registro para siguientes usos.</span>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-start gap-3" style="background-color: var(--bg-input);">
+                    <div class="w-6 h-6 rounded-lg theme-accent text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5 dynamic-accent-element">3</div>
+                    <div>
+                        <strong class="block mb-0.5 font-bold">Sincronización con Google Calendar</strong>
+                        <span class="opacity-75 leading-relaxed">Cada cita cuenta con un botón directo para agendar en Google Calendar en 1 clic. <strong class="theme-text-accent">Nota importante:</strong> Para que este proceso sea automático y sin contratiempos, es indispensable que en tu navegador predeterminado ya tengas tu sesión iniciada con tu cuenta de Google Calendar.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button onclick="closeWelcomeModal()"
+                    class="theme-btn w-full py-3.5 rounded-xl theme-accent theme-accent-hover text-white font-bold text-xs transition-all shadow-lg dynamic-accent-element flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Entendido, ¡Comenzar!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER CON NAVEGACIÓN RÁPIDA -->
+    <header
+        class="border-b border-black/10 dark:border-white/10 bg-black/20 dark:bg-black/60 backdrop-blur-md py-3 px-4 sm:px-6 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center space-x-3">
+                    <img src="isotipo.png" alt="Isotipo Kore" class="w-8 h-8 rounded-full object-cover shadow-lg border border-black/10 dark:border-white/20">
+                    <span class="font-display font-bold text-base tracking-wide">KORE <span class="theme-text-accent"
+                            id="header-subtitle">Studio</span></span>
+                </div>
+                <!-- TOGGLE MODO CLARO / OSCURO + MI CUENTA (MÓVIL) -->
+                <div class="md:hidden flex items-center gap-2">
+                    <button onclick="toggleLightDarkMode()"
+                        class="px-2.5 py-1 rounded-full border border-black/10 dark:border-white/20 text-xs flex items-center gap-1.5 bg-black/5 dark:bg-white/5">
+                        <i id="mode-icon-mobile" class="fa-solid fa-moon"></i>
+                    </button>
+                    <button onclick="openAccountModal()" title="Mi cuenta"
+                        class="px-2.5 py-1 rounded-full border border-black/10 dark:border-white/20 text-xs flex items-center gap-1.5 bg-black/5 dark:bg-white/5">
+                        <i class="fa-solid fa-user"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- BOTONES DE NAVEGACIÓN RÁPIDA EN EL HEADER -->
+            <nav class="flex items-center flex-wrap justify-center gap-1.5 text-[11px] font-semibold">
+                <a href="#step-1" onclick="pulseSection('step-1')"
+                    class="header-nav-step px-2.5 py-1 rounded-lg border border-black/10 dark:border-white/10 hover:border-current transition-all opacity-90 hover:opacity-100"
+                    style="background-color: var(--bg-input);">1. Nombre</a>
+                <a href="#step-2" onclick="pulseSection('step-2')"
+                    class="header-nav-step px-2.5 py-1 rounded-lg border border-black/10 dark:border-white/10 hover:border-current transition-all opacity-90 hover:opacity-100"
+                    style="background-color: var(--bg-input);">2. Estética</a>
+                <a href="#step-3" onclick="pulseSection('step-3')"
+                    class="header-nav-step px-2.5 py-1 rounded-lg border border-black/10 dark:border-white/10 hover:border-current transition-all opacity-90 hover:opacity-100"
+                    style="background-color: var(--bg-input);">3. Digitalizar</a>
+                <a href="#section-agenda" onclick="pulseSection('preview-container')"
+                    class="header-nav-step px-2.5 py-1 rounded-lg border border-black/10 dark:border-white/10 hover:border-current transition-all opacity-90 hover:opacity-100"
+                    style="background-color: var(--bg-input);">Agenda</a>
+                <a href="#section-calendar" onclick="pulseSection('section-calendar')"
+                    class="header-nav-step px-2.5 py-1 rounded-lg border border-black/10 dark:border-white/10 hover:border-current transition-all opacity-90 hover:opacity-100"
+                    style="background-color: var(--bg-input);">Calendario</a>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-2">
+                <!-- BOTÓN DE SOPORTE TÉCNICO WHATSAPP -->
+                <a href="https://wa.me/523317609455?text=Hola,%20necesito%20ayuda%20del%20soporte%20t%C3%A9cnico%20respecto%20a%20KORE%20Studio" target="_blank"
+                    class="px-2.5 py-1.5 rounded-full border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 text-xs font-semibold flex items-center gap-1.5 hover:bg-emerald-500/20 transition-all">
+                    <i class="fa-brands fa-whatsapp text-[12px]"></i>
+                    <span>Soporte Técnico</span>
+                </a>
+
+                <!-- TOGGLE MODO CLARO / OSCURO -->
+                <button onclick="toggleLightDarkMode()"
+                    class="px-2.5 py-1.5 rounded-full border border-black/10 dark:border-white/20 text-xs font-semibold flex items-center gap-1.5 hover:opacity-85 transition-all bg-black/5 dark:bg-white/5">
+                    <i id="mode-icon" class="fa-solid fa-moon"></i>
+                    <span id="mode-text">Oscuro</span>
+                </button>
+
+                <!-- MI CUENTA -->
+                <button onclick="openAccountModal()"
+                    class="px-2.5 py-1.5 rounded-full border border-black/10 dark:border-white/20 text-xs font-semibold flex items-center gap-1.5 hover:opacity-85 transition-all bg-black/5 dark:bg-white/5">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Mi cuenta</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- PANEL IZQUIERDO: CONTROLES (5 COLS) -->
+        <div class="lg:col-span-5 space-y-6">
+
+            <!-- PASO 1: NOMBRE -->
+            <div id="step-1" class="theme-card p-6 rounded-3xl border shadow-xl scroll-mt-24 transition-all duration-300">
+                <div class="flex items-center gap-3 mb-4">
+                    <span
+                        class="w-7 h-7 rounded-full theme-accent text-white font-bold flex items-center justify-center text-xs dynamic-accent-element">1</span>
+                    <h2 class="font-display font-bold text-lg">Nombre de tu Agenda</h2>
+                </div>
+                <label class="block text-xs opacity-70 mb-2">¿Cómo se llama tu negocio o proyecto?</label>
+                <input type="text" id="agenda-name-input" oninput="updateAgendaName(this.value)"
+                    placeholder="Ej. Studio Elegance / Dra. Ana Gómez"
+                    class="w-full p-3.5 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none focus:border-black/40 dark:focus:border-white/40"
+                    style="background-color: var(--bg-input);">
+            </div>
+
+            <!-- PASO 2: TEMAS Y MODO -->
+            <div id="step-2" class="theme-card p-6 rounded-3xl border shadow-xl scroll-mt-24 transition-all duration-300">
+                <div class="flex items-center gap-3 mb-4">
+                    <span
+                        class="w-7 h-7 rounded-full theme-accent text-white font-bold flex items-center justify-center text-xs dynamic-accent-element">2</span>
+                    <h2 class="font-display font-bold text-lg">Estética & Paleta de Colores</h2>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs opacity-70 mb-2">Modo del fondo (Light / Dark):</label>
+                    <div class="grid grid-cols-2 gap-2 p-1 rounded-xl border border-black/10 dark:border-white/10"
+                        style="background-color: var(--bg-input);">
+                        <button id="btn-mode-dark" onclick="setMode('dark')"
+                            class="py-2 rounded-lg text-xs font-bold transition-all theme-accent text-white dynamic-accent-element">
+                            <i class="fa-solid fa-moon mr-1"></i> Oscuro
+                        </button>
+                        <button id="btn-mode-light" onclick="setMode('light')"
+                            class="py-2 rounded-lg text-xs font-bold transition-all opacity-70 hover:opacity-100">
+                            <i class="fa-solid fa-sun mr-1"></i> Claro
+                        </button>
+                    </div>
+                </div>
+
+                <p class="text-xs opacity-70 mb-3">Elige la paleta cromática de tu marca:</p>
+
+                <div class="grid grid-cols-2 gap-2" id="theme-selector">
+                    <button onclick="setTheme('pink')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-pink-500 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-[#ff1493]"></span> Pink Cyber
+                    </button>
+                    <button onclick="setTheme('purple')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-purple-500 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-[#a855f7]"></span> Purple Glow
+                    </button>
+                    <button onclick="setTheme('blue')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-blue-500 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-[#3b82f6]"></span> Electric Blue
+                    </button>
+                    <button onclick="setTheme('teal')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-teal-400 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-[#14b8a6]"></span> Cyber Cyan
+                    </button>
+                    <button onclick="setTheme('gold')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-amber-400 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-[#f59e0b]"></span> Imperial Gold
+                    </button>
+                    <button onclick="setTheme('rosegold')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-rose-300 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-[#fda4af]"></span> Rose Gold
+                    </button>
+                    <button onclick="setTheme('red')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-red-500 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-[#ef4444]"></span> Crimson Red
+                    </button>
+                    <button onclick="setTheme('green')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-emerald-500 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-[#10b981]"></span> Emerald Green
+                    </button>
+                    <button onclick="setTheme('dark')"
+                        class="theme-btn p-2.5 rounded-xl border border-black/10 dark:border-white/10 flex items-center gap-2 text-xs font-semibold hover:border-slate-400 transition-all"
+                        style="background-color: var(--bg-input);">
+                        <span class="w-4 h-4 rounded-full bg-slate-400"></span> Slate Luxe
+                    </button>
+
+                    <button onclick="setTheme('rainbow')"
+                        class="theme-btn p-2.5 rounded-xl border border-white/20 rainbow-btn-style font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg hover:scale-105 transition-all">
+                        ✨ Modo Rainbow
+                    </button>
+                </div>
+            </div>
+
+            <!-- PASO 3: DIGITALIZAR CON CÁMARA E IA CORRECTORA -->
+            <div id="step-3"
+                class="theme-card p-6 rounded-3xl border shadow-xl transition-all duration-300 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-4">
+                    <span
+                        class="w-7 h-7 rounded-full theme-accent text-white font-bold flex items-center justify-center text-xs dynamic-accent-element">3</span>
+                    <h2 class="font-display font-bold text-lg">Digitalizar Citas</h2>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 p-1 rounded-xl mb-4 border border-black/10 dark:border-white/10 text-xs font-bold"
+                    style="background-color: var(--bg-input);">
+                    <button id="btn-tab-photo" onclick="toggleMigrationTab('photo')"
+                        class="py-2 rounded-lg theme-accent text-white transition-all dynamic-accent-element">
+                        <i class="fa-solid fa-camera mr-1"></i> Foto / Escáner
+                    </button>
+                    <button id="btn-tab-manual" onclick="toggleMigrationTab('manual')"
+                        class="py-2 rounded-lg opacity-60 hover:opacity-100 transition-all">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> Manual
+                    </button>
+                </div>
+
+                <!-- FOTO + WEBCAM + CORRECCIÓN IA -->
+                <div id="migration-photo" class="space-y-3">
+                    <p class="text-xs opacity-70">Escanea la nota. La IA extraerá nombre, fecha, hora y corregirá el servicio.</p>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="openWebcam()"
+                            class="theme-btn border border-black/10 dark:border-white/20 rounded-2xl p-4 flex flex-col items-center justify-center hover:border-black/30 dark:hover:border-white/50 transition-all text-center"
+                            style="background-color: var(--bg-input);">
+                            <i class="fa-solid fa-camera-retro text-2xl theme-text-accent mb-1.5"></i>
+                            <span class="text-xs font-bold">Cámara en Vivo</span>
+                            <span class="text-[9px] opacity-60">Laptop o Celular</span>
+                        </button>
+
+                        <label
+                            class="theme-btn border border-black/10 dark:border-white/20 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-black/30 dark:hover:border-white/50 transition-all text-center"
+                            style="background-color: var(--bg-input);">
+                            <i class="fa-solid fa-images text-2xl theme-text-accent mb-1.5"></i>
+                            <span class="text-xs font-bold">Subir Imagen</span>
+                            <span class="text-[9px] opacity-60">Archivo JPG / PNG</span>
+                            <input type="file" accept="image/*" class="hidden" onchange="processFileInput(event)">
+                        </label>
+                    </div>
+
+                    <div id="webcam-container"
+                        class="hidden space-y-2 p-3 rounded-2xl border border-black/10 dark:border-white/20 text-center"
+                        style="background-color: var(--bg-card);">
+                        <video id="webcam-video" autoplay playsinline
+                            class="w-full rounded-xl border border-black/10 dark:border-white/10 max-h-48 object-cover"></video>
+                        <div class="flex gap-2">
+                            <button onclick="captureWebcamPhoto()"
+                                class="theme-btn flex-1 py-2 rounded-xl theme-accent text-white font-bold text-xs dynamic-accent-element">
+                                📸 Capturar Foto
+                            </button>
+                            <button onclick="closeWebcam()"
+                                class="theme-btn px-3 py-2 rounded-xl border border-black/10 dark:border-white/20 font-bold text-xs">
+                                ✕ Cerrar
+                            </button>
+                        </div>
+                    </div>
+
+                    <canvas id="ocr-canvas" class="hidden"></canvas>
+
+                    <div id="ocr-loader"
+                        class="hidden text-center py-4 space-y-2 rounded-xl p-3 border border-black/10 dark:border-white/10"
+                        style="background-color: var(--bg-input);">
+                        <i class="fa-solid fa-brain fa-spin theme-text-accent text-2xl"></i>
+                        <p class="text-xs font-bold">Procesando con Motor Ortográfico IA...</p>
+                        <p id="ocr-status" class="text-[10px] opacity-70">Analizando cliente, fecha y hora...</p>
+                    </div>
+
+                    <div id="ocr-result-box"
+                        class="hidden space-y-3 p-4 rounded-2xl border border-black/10 dark:border-white/10"
+                        style="background-color: var(--bg-card);">
+                        <div
+                            class="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                            <span
+                                class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Datos Detectados por IA
+                            </span>
+                            <span class="text-[9px] opacity-60">Verifica o ajusta</span>
+                        </div>
+
+                        <div class="space-y-2.5">
+                            <div>
+                                <label class="block text-[10px] opacity-70 mb-1">Nombre del Cliente:</label>
+                                <input type="text" id="ocr-client-name" placeholder="Ej. Valeria Robledo"
+                                    class="w-full p-2.5 rounded-xl border border-black/10 dark:border-white/10 text-xs font-bold focus:outline-none"
+                                    style="background-color: var(--bg-input);">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] opacity-70 mb-1">Fecha Detectada:</label>
+                                    <input type="date" id="ocr-detected-date"
+                                        class="w-full p-2.5 rounded-xl border border-black/10 dark:border-white/10 text-xs font-bold theme-text-accent focus:outline-none cursor-pointer"
+                                        style="background-color: var(--bg-input);">
+                                </div>
+
+                                <div>
+                                    <label class="block text-[10px] opacity-70 mb-1">Hora Detectada:</label>
+                                    <input type="text" id="ocr-detected-time"
+                                        class="w-full p-2.5 rounded-xl border border-black/10 dark:border-white/10 text-xs font-bold theme-text-accent focus:outline-none"
+                                        style="background-color: var(--bg-input);" placeholder="Ej. 11:00 AM">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] opacity-70 mb-1">Duración de la Cita:</label>
+                                <select id="ocr-detected-duration"
+                                    class="w-full p-2.5 rounded-xl border border-black/10 dark:border-white/10 text-xs font-bold theme-text-accent focus:outline-none cursor-pointer"
+                                    style="background-color: var(--bg-input);">
+                                    <option value="5 min">5 minutos</option>
+                                    <option value="10 min">10 minutos</option>
+                                    <option value="15 min">15 minutos</option>
+                                    <option value="30 min">30 minutos</option>
+                                    <option value="45 min">45 minutos</option>
+                                    <option value="1 hora" selected>1 hora</option>
+                                    <option value="1.5 horas">1.5 horas</option>
+                                    <option value="2 horas">2 horas</option>
+                                    <option value="3 horas">3 horas</option>
+                                    <option value="4 horas">4 horas</option>
+                                    <option value="6 horas">6 horas</option>
+                                    <option value="8 horas">8 horas (Jornada)</option>
+                                    <option value="12 horas">12 horas (Medio día / Turno)</option>
+                                    <option value="24 horas">24 horas (Todo el día)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] opacity-70 mb-1">Servicio Corregido:</label>
+                                <textarea id="ocr-extracted-text" rows="2"
+                                    class="w-full p-2.5 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none"
+                                    style="background-color: var(--bg-input);"></textarea>
+                            </div>
+                        </div>
+
+                        <button onclick="convertOCRToAppointment()"
+                            class="theme-btn w-full py-2.5 rounded-xl theme-accent theme-accent-hover text-white font-bold text-xs transition-all shadow-md dynamic-accent-element">
+                            + Confirmar e Insertar a la Agenda
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MODO MANUAL -->
+                <div id="migration-manual" class="hidden space-y-3">
+                    <div>
+                        <label class="block text-[10px] opacity-70 mb-1">Nombre de la clienta:</label>
+                        <input type="text" id="manual-client" placeholder="Ej. Ana Lucía"
+                            class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none"
+                            style="background-color: var(--bg-input);">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] opacity-70 mb-1">Fecha (Calendario):</label>
+                            <input type="date" id="manual-date"
+                                class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none cursor-pointer"
+                                style="background-color: var(--bg-input);">
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] opacity-70 mb-1">Hora (Opciones):</label>
+                            <select id="manual-time"
+                                class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none cursor-pointer"
+                                style="background-color: var(--bg-input);">
+                                <option value="">-- Hora --</option>
+                                <option value="08:00 AM">08:00 AM</option>
+                                <option value="08:30 AM">08:30 AM</option>
+                                <option value="09:00 AM">09:00 AM</option>
+                                <option value="09:30 AM">09:30 AM</option>
+                                <option value="10:00 AM">10:00 AM</option>
+                                <option value="10:30 AM">10:30 AM</option>
+                                <option value="11:00 AM">11:00 AM</option>
+                                <option value="11:30 AM">11:30 AM</option>
+                                <option value="12:00 PM">12:00 PM</option>
+                                <option value="12:30 PM">12:30 PM</option>
+                                <option value="01:00 PM">01:00 PM</option>
+                                <option value="01:30 PM">01:30 PM</option>
+                                <option value="02:00 PM">02:00 PM</option>
+                                <option value="02:30 PM">02:30 PM</option>
+                                <option value="03:00 PM">03:00 PM</option>
+                                <option value="03:30 PM">03:30 PM</option>
+                                <option value="04:00 PM">04:00 PM</option>
+                                <option value="04:30 PM">04:30 PM</option>
+                                <option value="05:00 PM">05:00 PM</option>
+                                <option value="05:30 PM">05:30 PM</option>
+                                <option value="06:00 PM">06:00 PM</option>
+                                <option value="06:30 PM">06:30 PM</option>
+                                <option value="07:00 PM">07:00 PM</option>
+                                <option value="07:30 PM">07:30 PM</option>
+                                <option value="08:00 PM">08:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] opacity-70 mb-1">Duración de la cita (5 min a 24 horas):</label>
+                        <select id="manual-duration"
+                            class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none cursor-pointer"
+                            style="background-color: var(--bg-input);">
+                            <option value="5 min">5 minutos</option>
+                            <option value="10 min">10 minutos</option>
+                            <option value="15 min">15 minutos</option>
+                            <option value="30 min">30 minutos</option>
+                            <option value="45 min">45 minutos</option>
+                            <option value="1 hora" selected>1 hora</option>
+                            <option value="1.5 horas">1.5 horas</option>
+                            <option value="2 horas">2 horas</option>
+                            <option value="3 horas">3 horas</option>
+                            <option value="4 horas">4 horas</option>
+                            <option value="6 horas">6 horas</option>
+                            <option value="8 horas">8 horas (Jornada)</option>
+                            <option value="12 horas">12 horas (Medio día / Turno)</option>
+                            <option value="24 horas">24 horas (Todo el día)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] opacity-70 mb-1">Servicio a realizar:</label>
+                        <input type="text" id="manual-service" placeholder="Ej. Retoque de Uñas / Consulta"
+                            class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none"
+                            style="background-color: var(--bg-input);">
+                    </div>
+
+                    <button onclick="addManualAppointment()"
+                        class="theme-btn w-full py-3 rounded-xl theme-accent theme-accent-hover text-white font-bold text-xs transition-all shadow-md dynamic-accent-element">
+                        + Añadir Cita
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- PANEL DERECHO: VISTA PREVIA (AGENDA + CALENDARIO ABAJO) -->
+        <div class="lg:col-span-7 space-y-6">
+
+            <!-- LISTA DE CITAS (AGENDA) -->
+            <div id="section-agenda" class="scroll-mt-24 transition-all duration-300">
+                <div class="flex items-center justify-between px-2 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider opacity-70">Vista Previa de la Interfaz</span>
+                    <span class="text-[11px] theme-text-accent font-semibold flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full theme-accent animate-ping dynamic-accent-element"></span> En línea
+                    </span>
+                </div>
+
+                <div id="preview-container"
+                    class="theme-card p-6 sm:p-8 rounded-3xl border glow-effect transition-all duration-300">
+
+                    <div
+                        class="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-6 mb-6">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-widest opacity-70">Agenda Digital</span>
+                            <h1 id="preview-title" class="font-display text-2xl sm:text-3xl font-bold tracking-tight">Mi Agenda</h1>
+                        </div>
+                        <div id="preview-badge"
+                            class="w-10 h-10 rounded-2xl theme-accent flex items-center justify-center text-white text-lg dynamic-accent-element">
+                            <i class="fa-regular fa-calendar-check"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-display font-bold text-sm">Próximas Citas Documentadas</h3>
+                            <span id="appointment-count"
+                                class="text-[11px] px-2.5 py-0.5 rounded-full border border-black/20 dark:border-white/20 opacity-80">
+                                0 Citas
+                            </span>
+                        </div>
+
+                        <div id="appointments-preview-list" class="space-y-3">
+                            <!-- Las citas guardadas se renderizarán aquí dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-black/10 dark:border-white/10">
+                        <button id="preview-action-btn" onclick="scrollToCreateAppointment()"
+                            class="theme-btn w-full py-3.5 rounded-xl theme-accent theme-accent-hover text-white font-bold text-xs transition-all shadow-lg flex items-center justify-center gap-2 dynamic-accent-element">
+                            <i class="fa-solid fa-plus"></i> Nueva Cita
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CALENDARIO VISUAL DEL MES ACTUAL -->
+            <div id="section-calendar"
+                class="theme-card p-6 rounded-3xl border shadow-xl transition-all duration-300 scroll-mt-24">
+                <div class="flex items-center justify-between mb-4 border-b border-black/10 dark:border-white/10 pb-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-days theme-text-accent text-lg"></i>
+                        <h2 id="calendar-month-title" class="font-display font-bold text-base capitalize">Calendario del Mes</h2>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="changeMonth(-1)"
+                            class="w-7 h-7 rounded-lg border border-black/10 dark:border-white/20 flex items-center justify-center text-xs opacity-70 hover:opacity-100 transition-all">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <button onclick="changeMonth(1)"
+                            class="w-7 h-7 rounded-lg border border-black/10 dark:border-white/20 flex items-center justify-center text-xs opacity-70 hover:opacity-100 transition-all">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DÍAS DE LA SEMANA -->
+                <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold opacity-60 mb-2">
+                    <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+                </div>
+
+                <!-- GRILLA DE DÍAS DEL MES -->
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1.5">
+                    <!-- Se llena dinámicamente con JavaScript -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- ICONO DE MICRÓFONO FLOTANTE FIJO (TERCERA FORMA DE AGENDAR) -->
+    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <!-- Tarjeta de estado de grabación con ondas de voz animadas -->
+        <div id="voice-recording-card" class="hidden theme-card p-4 rounded-2xl border shadow-2xl mb-3 w-72 space-y-3">
+            <div class="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                <span class="text-[11px] font-bold flex items-center gap-1.5 theme-text-accent">
+                    <i class="fa-solid fa-microphone-lines animate-pulse"></i> Asistente de Voz IA
+                </span>
+                <!-- Ecualizador / Onda de voz animada -->
+                <div class="flex items-end gap-1 h-5 px-1">
+                    <span class="wave-bar rounded-full"></span>
+                    <span class="wave-bar rounded-full"></span>
+                    <span class="wave-bar rounded-full"></span>
+                    <span class="wave-bar rounded-full"></span>
+                    <span class="wave-bar rounded-full"></span>
+                </div>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] opacity-70">Tiempo transcurrido:</span>
+                <span id="voice-timer" class="text-xs font-mono font-bold">00:00</span>
+            </div>
+            <p class="text-[11px] opacity-80 leading-relaxed">
+                Di claramente: cliente, fecha, hora y objetivo. Ejemplo: <span class="italic font-semibold">"Cita para Ana López el 15 de octubre a las 4 de la tarde para uñas acrílicas"</span>.
+            </p>
+            <div id="voice-transcript" class="p-2.5 rounded-xl border border-black/10 dark:border-white/10 text-[11px] min-h-[40px] max-h-24 overflow-y-auto" style="background-color: var(--bg-input);">
+                Escuchando...
+            </div>
+            <button onclick="stopVoiceRecording()" class="theme-btn w-full py-2 rounded-xl theme-accent text-white font-bold text-xs dynamic-accent-element flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-check"></i> Finalizar y Guardar Cita
+            </button>
+        </div>
+
+        <!-- Botón flotante del micrófono con efectos de escala por volumen/tono -->
+        <button id="floating-mic-btn" onclick="toggleVoiceRecording()"
+            class="w-14 h-14 rounded-full theme-accent text-white shadow-2xl flex items-center justify-center text-xl transition-transform hover:scale-110 dynamic-accent-element border-2 border-white/30 relative">
+            <i id="mic-icon-element" class="fa-solid fa-microphone"></i>
+            <!-- Anillo animado de pulso -->
+            <span id="mic-pulse-ring" class="absolute inset-0 rounded-full theme-accent opacity-0 pointer-events-none"></span>
+        </button>
+    </div>
+
+    <!-- MODAL INTERACTIVO DE CITAS DEL DÍA SELECCIONADO -->
+    <div id="day-appointments-modal"
+        class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="theme-card p-6 rounded-3xl border shadow-2xl max-w-lg w-full space-y-4 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-day theme-text-accent text-lg"></i>
+                    <div>
+                        <h3 id="modal-day-title" class="font-bold text-sm">Citas del Día</h3>
+                        <p id="modal-day-subtitle" class="text-[10px] opacity-70 capitalize"></p>
+                    </div>
+                </div>
+                <button onclick="closeDayModal()"
+                    class="w-7 h-7 rounded-lg border border-black/10 dark:border-white/20 flex items-center justify-center text-xs opacity-60 hover:opacity-100">✕</button>
+            </div>
+
+            <!-- LISTA DE CITAS ORDENADAS POR HORA -->
+            <div id="modal-appointments-list" class="space-y-3 overflow-y-auto pr-1 flex-1">
+                <!-- Contenido dinámico -->
+            </div>
+
+            <div class="pt-3 border-t border-black/10 dark:border-white/10 flex gap-2">
+                <button id="btn-add-for-day" onclick="addAppointmentForSelectedDate()"
+                    class="theme-btn flex-1 py-2.5 rounded-xl theme-accent theme-accent-hover text-white font-bold text-xs transition-all shadow-md dynamic-accent-element flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> Agendar Cita en este Día
+                </button>
+                <button onclick="closeDayModal()"
+                    class="px-4 py-2.5 rounded-xl border border-black/10 dark:border-white/20 text-xs font-bold opacity-80 hover:opacity-100">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA EDITAR CITAS -->
+    <div id="edit-modal"
+        class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="theme-card p-6 rounded-3xl border shadow-2xl max-w-md w-full space-y-4">
+            <div class="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-3">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square theme-text-accent"></i> Editar Cita
+                </h3>
+                <button onclick="closeEditModal()" class="text-xs opacity-60 hover:opacity-100">✕</button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] opacity-70 mb-1">Nombre del Cliente:</label>
+                    <input type="text" id="edit-client-input"
+                        class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none"
+                        style="background-color: var(--bg-input);">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] opacity-70 mb-1">Fecha:</label>
+                        <input type="date" id="edit-date-input"
+                            class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none cursor-pointer"
+                            style="background-color: var(--bg-input);">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] opacity-70 mb-1">Hora:</label>
+                        <input type="text" id="edit-time-input" placeholder="Ej. 11:00 AM"
+                            class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none"
+                            style="background-color: var(--bg-input);">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] opacity-70 mb-1">Duración:</label>
+                    <select id="edit-duration-input"
+                        class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none cursor-pointer"
+                        style="background-color: var(--bg-input);">
+                        <option value="5 min">5 minutos</option>
+                        <option value="10 min">10 minutos</option>
+                        <option value="15 min">15 minutos</option>
+                        <option value="30 min">30 minutos</option>
+                        <option value="45 min">45 minutos</option>
+                        <option value="1 hora">1 hora</option>
+                        <option value="1.5 horas">1.5 horas</option>
+                        <option value="2 horas">2 horas</option>
+                        <option value="3 horas">3 horas</option>
+                        <option value="4 horas">4 horas</option>
+                        <option value="6 horas">6 horas</option>
+                        <option value="8 horas">8 horas (Jornada)</option>
+                        <option value="12 horas">12 horas (Medio día / Turno)</option>
+                        <option value="24 horas">24 horas (Todo el día)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] opacity-70 mb-1">Servicio / Notas:</label>
+                    <input type="text" id="edit-service-input"
+                        class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none"
+                        style="background-color: var(--bg-input);">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="saveAppointmentEdit()"
+                    class="theme-btn flex-1 py-2.5 rounded-xl theme-accent theme-accent-hover text-white font-bold text-xs transition-all shadow-md dynamic-accent-element">
+                    Guardar Cambios
+                </button>
+                <button onclick="closeEditModal()"
+                    class="px-4 py-2.5 rounded-xl border border-black/10 dark:border-white/20 text-xs font-bold opacity-80 hover:opacity-100">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIGURACIÓN GOOGLE CALENDAR (MANTENIDO PARA COMPATIBILIDAD) -->
+    <div id="gcal-config-modal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="theme-card p-6 rounded-3xl border shadow-2xl max-w-lg w-full space-y-4">
+            <div class="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-3">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fa-brands fa-google text-blue-400"></i> Configurar Sincronización Google Calendar
+                </h3>
+                <button onclick="closeGCalConfigModal()" class="text-xs opacity-60 hover:opacity-100">✕</button>
+            </div>
+
+            <p class="text-xs opacity-80 leading-relaxed">
+                Cada cita que agregues incluye el botón <span class="text-blue-400 font-bold">Agendar a Google Calendar</span> para agendarla en 1 click de forma universal.
+            </p>
+
+            <div class="space-y-3 pt-2">
+                <label class="block text-xs font-bold opacity-90">O bien, introduce tus credenciales OAuth de Google:</label>
+                <div>
+                    <label class="block text-[10px] opacity-70 mb-1">Client ID:</label>
+                    <input type="text" id="custom-client-id" placeholder="Ej. 12345...apps.googleusercontent.com"
+                        class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none"
+                        style="background-color: var(--bg-input);">
+                </div>
+                <div>
+                    <label class="block text-[10px] opacity-70 mb-1">API Key:</label>
+                    <input type="text" id="custom-api-key" placeholder="Ej. AIzaSy..."
+                        class="w-full p-3 rounded-xl border border-black/10 dark:border-white/10 text-xs focus:outline-none"
+                        style="background-color: var(--bg-input);">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="saveGCalCredentials()"
+                    class="theme-btn flex-1 py-2.5 rounded-xl theme-accent text-white font-bold text-xs dynamic-accent-element">
+                    Guardar y Autenticar
+                </button>
+                <button onclick="closeGCalConfigModal()"
+                    class="px-4 py-2.5 rounded-xl border border-black/10 dark:border-white/20 text-xs font-bold opacity-80">
+                    Usar Exportación Directa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---- cuenta: sin sesión no hay agenda; los datos se guardan separados por usuario ----
+        const __account = KORE.account('client');
+        const __session = __account.getSession();
+        if (!__session) location.replace(KORE.CONFIG.pages.login);
+        const kk = (key) => key + '_' + ((__session && __session.uid) || 'anon');
+
+        let CLIENT_ID = localStorage.getItem('kore_gcal_client_id') || '';
+        let API_KEY = localStorage.getItem('kore_gcal_api_key') || '';
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+
+        let tokenClient;
+        let gapiInited = false;
+        let gsiInited = false;
+        let isGCalConnected = false;
+        let selectedDateForModal = '';
+
+        let currentThemeKey = localStorage.getItem('kore_theme') || 'pink';
+        let isLightMode = localStorage.getItem('kore_light_mode') === 'true';
+        let videoStream = null;
+        let activeEditIndex = null; // Índice de la cita en edición
+
+        let calendarViewDate = new Date();
+
+        // Variables para el reconocimiento de voz y animación de micrófono
+        let recognition = null;
+        let isRecordingVoice = false;
+        let voiceTimerInterval = null;
+        let voiceSecondsElapsed = 0;
+        let audioContext = null;
+        let analyser = null;
+        let microphoneStream = null;
+        let animationFrameId = null;
+        let finalTranscriptBuffer = "";
+
+        const MASTER_DICTIONARY = [
+            "Uñas", "Uñas Acrílicas", "Pestañas", "Consulta", "Consulta Médica",
+            "Tratamiento", "Valoración", "Retoque", "Mantenimiento", "Tinte",
+            "Limpieza Facial", "Maquillaje", "Manicura", "Pedicura", "Corte de Cabello",
+            "Depilación", "Masaje", "Acrílico", "Gelish", "Diseño"
+        ];
+
+        const MONTHS_MAP = {
+            'ene': '01', 'enero': '01', 'feb': '02', 'febrero': '02', 'mar': '03', 'marzo': '03',
+            'abr': '04', 'abril': '04', 'may': '05', 'mayo': '05', 'jun': '06', 'junio': '06',
+            'jul': '07', 'julio': '07', 'ago': '08', 'agosto': '08', 'sep': '09', 'septiembre': '09',
+            'oct': '10', 'octubre': '10', 'nov': '11', 'noviembre': '11', 'dic': '12', 'diciembre': '12'
+        };
+
+        // GESTIÓN DE PERSISTENCIA (LOCALSTORAGE)
+        function getStoredAppointments() {
+            const data = localStorage.getItem(kk('kore_appointments')) ?? localStorage.getItem('kore_appointments');
+            if (data) {
+                try { return JSON.parse(data); } catch (e) { return []; }
+            }
+            // Citas por defecto iniciales si no hay nada guardado
+            return [
+                { client: "Mariana López", service: "Servicio de Valoración Inicial", date: "2026-10-05", time: "11:00 AM", duration: "1 hora" },
+                { client: "Sofía Ramírez", service: "Tratamiento Completo", date: "2026-10-05", time: "02:30 PM", duration: "2 horas" }
+            ];
+        }
+
+        function saveAppointmentsToStorage(appointments) {
+            localStorage.setItem(kk('kore_appointments'), JSON.stringify(appointments));
+            localStorage.removeItem('kore_appointments'); // datos antiguos ya migrados a la cuenta
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('manual-date').value = today;
+
+            // Cargar nombre guardado
+            const savedName = localStorage.getItem(kk('kore_agenda_name')) || localStorage.getItem('kore_agenda_name') || '';
+            if (savedName) {
+                document.getElementById('agenda-name-input').value = savedName;
+                document.getElementById('preview-title').textContent = savedName;
+            }
+
+            // Aplicar modo claro/oscuro guardado
+            if (isLightMode) {
+                setMode('light');
+            } else {
+                setMode('dark');
+            }
+
+            applyCurrentStyle();
+            renderAppointmentsList();
+            renderCalendar();
+            initSpeechRecognition();
+        });
+
+        function closeWelcomeModal() {
+            document.getElementById('welcome-modal').classList.add('hidden');
+        }
+
+        function gapiLoaded() {
+            if (API_KEY) gapi.load('client', initializeGapiClient);
+        }
+
+        async function initializeGapiClient() {
+            try {
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+                gapiInited = true;
+            } catch (e) {
+                console.warn("API Key no válida o no configurada.");
+            }
+        }
+
+        function gisLoaded() {
+            if (CLIENT_ID) {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: '',
+                });
+                gsiInited = true;
+            }
+        }
+
+        function closeGCalConfigModal() {
+            document.getElementById('gcal-config-modal').classList.add('hidden');
+        }
+
+        function saveGCalCredentials() {
+            const cid = document.getElementById('custom-client-id').value.trim();
+            const key = document.getElementById('custom-api-key').value.trim();
+
+            if (cid && key) {
+                CLIENT_ID = cid;
+                API_KEY = key;
+                localStorage.setItem('kore_gcal_client_id', cid);
+                localStorage.setItem('kore_gcal_api_key', key);
+                closeGCalConfigModal();
+                alert("Credenciales guardadas. Intentando autenticar...");
+                location.reload();
+            } else {
+                alert("Por favor ingresa ambas claves.");
+            }
+        }
+
+        function parseDurationToMinutes(durationStr) {
+            if (!durationStr) return 60;
+            const lower = durationStr.toLowerCase().trim();
+            let num = parseFloat(lower) || 1;
+            if (lower.includes('min')) {
+                return num;
+            } else if (lower.includes('hour') || lower.includes('hora')) {
+                return num * 60;
+            }
+            return 60;
+        }
+
+        function exportSingleToGoogleCalendar(btnElement, client, dateStr, timeStr, durationStr, service) {
+            const startISO = parseDateTimeToISO(dateStr, timeStr);
+            const startDate = new Date(startISO);
+            const durationMinutes = parseDurationToMinutes(durationStr);
+            const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000);
+
+            const formatCalDate = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+
+            const title = encodeURIComponent(`Cita: ${client} - ${service}`);
+            const details = encodeURIComponent(`Cliente: ${client}\nServicio: ${service}\nDuración: ${durationStr}\nAgendado con KORE Systems`);
+            const dates = `${formatCalDate(startDate)}/${formatCalDate(endDate)}`;
+
+            const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}`;
+
+            window.open(googleCalUrl, '_blank');
+
+            if (btnElement) {
+                markButtonAsScheduled(btnElement);
+            }
+        }
+
+        function markButtonAsScheduled(btnElement) {
+            btnElement.innerHTML = `<i class="fa-solid fa-circle-check"></i> Agendado`;
+            btnElement.className = "btn-gcal-action px-3 py-1.5 rounded-lg border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-sm";
+        }
+
+        function parseDateTimeToISO(dateStr, timeStr) {
+            if (!dateStr) return new Date().toISOString();
+
+            let [time, modifier] = timeStr.trim().split(' ');
+            let [hours, minutes] = time.split(':');
+            if (!minutes) minutes = "00";
+
+            let hoursNum = parseInt(hours, 10);
+            if (modifier) {
+                if (modifier.toUpperCase() === 'PM' && hoursNum < 12) hoursNum += 12;
+                if (modifier.toUpperCase() === 'AM' && hoursNum === 12) hoursNum = 0;
+            }
+
+            const formattedHours = String(hoursNum).padStart(2, '0');
+            const formattedMinutes = String(minutes).padStart(2, '0');
+
+            const dt = new Date(`${dateStr}T${formattedHours}:${formattedMinutes}:00`);
+            return isNaN(dt.getTime()) ? new Date().toISOString() : dt.toISOString();
+        }
+
+        async function syncAppointmentToGoogleCalendar(client, date, time, duration, service) {
+            if (!isGCalConnected) return;
+
+            const startISO = parseDateTimeToISO(date, time);
+            const durationMinutes = parseDurationToMinutes(duration);
+            const endDateObj = new Date(new Date(startISO).getTime() + durationMinutes * 60 * 1000);
+            const endISO = endDateObj.toISOString();
+
+            const event = {
+                'summary': `Cita: ${client} - ${service}`,
+                'description': `Cita agendada mediante KORE Systems.\nCliente: ${client}\nServicio: ${service}\nDuración: ${duration}`,
+                'start': {
+                    'dateTime': startISO,
+                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                },
+                'end': {
+                    'dateTime': endISO,
+                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                }
+            };
+
+            try {
+                await gapi.client.calendar.events.insert({
+                    'calendarId': 'primary',
+                    'resource': event
+                });
+            } catch (err) {
+                console.error("Error al sincronizar con Google Calendar:", err);
+            }
+        }
+
+        const themes = {
+            pink: { accent: '#ff1493', accentLight: '#ff66c4', borderDark: 'rgba(255, 20, 147, 0.3)', borderLight: 'rgba(255, 20, 147, 0.2)' },
+            purple: { accent: '#a855f7', accentLight: '#c084fc', borderDark: 'rgba(168, 85, 247, 0.3)', borderLight: 'rgba(168, 85, 247, 0.2)' },
+            blue: { accent: '#3b82f6', accentLight: '#60a5fa', borderDark: 'rgba(59, 130, 246, 0.3)', borderLight: 'rgba(59, 130, 246, 0.2)' },
+            teal: { accent: '#14b8a6', accentLight: '#2dd4bf', borderDark: 'rgba(20, 184, 166, 0.3)', borderLight: 'rgba(20, 184, 166, 0.2)' },
+            gold: { accent: '#f59e0b', accentLight: '#fbbf24', borderDark: 'rgba(245, 158, 11, 0.3)', borderLight: 'rgba(245, 158, 11, 0.2)' },
+            rosegold: { accent: '#fda4af', accentLight: '#fecdd3', borderDark: 'rgba(253, 164, 175, 0.3)', borderLight: 'rgba(253, 164, 175, 0.2)' },
+            red: { accent: '#ef4444', accentLight: '#f87171', borderDark: 'rgba(239, 68, 68, 0.3)', borderLight: 'rgba(239, 68, 68, 0.2)' },
+            green: { accent: '#10b981', accentLight: '#34d399', borderDark: 'rgba(16, 185, 129, 0.3)', borderLight: 'rgba(16, 185, 129, 0.2)' },
+            dark: { accent: '#71717a', accentLight: '#a1a1aa', borderDark: 'rgba(113, 113, 122, 0.3)', borderLight: 'rgba(113, 113, 122, 0.2)' }
+        };
+
+        function changeMonth(direction) {
+            calendarViewDate.setMonth(calendarViewDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        function pulseSection(sectionId) {
+            const el = document.getElementById(sectionId);
+            if (!el) return;
+            el.classList.remove('section-pulse-effect');
+            void el.offsetWidth;
+            el.classList.add('section-pulse-effect');
+            setTimeout(() => {
+                el.classList.remove('section-pulse-effect');
+            }, 1000);
+        }
+
+        function selectDateFromCalendar(dateStr) {
+            selectedDateForModal = dateStr;
+            const modal = document.getElementById('day-appointments-modal');
+            const titleEl = document.getElementById('modal-day-title');
+            const subtitleEl = document.getElementById('modal-day-subtitle');
+            const listEl = document.getElementById('modal-appointments-list');
+
+            const [year, month, day] = dateStr.split('-');
+            const dateObj = new Date(year, month - 1, day);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const formattedDateStr = dateObj.toLocaleDateString('es-ES', options);
+
+            titleEl.textContent = `Citas para el ${day} de ${dateObj.toLocaleDateString('es-ES', { month: 'long' })} del ${year}`;
+            subtitleEl.textContent = formattedDateStr;
+
+            const allAppointments = getStoredAppointments();
+            const dayAppointments = allAppointments.filter(app => app.date === dateStr);
+
+            dayAppointments.sort((a, b) => {
+                return parseDateTimeToISO(a.date, a.time) > parseDateTimeToISO(b.date, b.time) ? 1 : -1;
+            });
+
+            listEl.innerHTML = '';
+
+            if (dayAppointments.length === 0) {
+                listEl.innerHTML = `
+          <div class="text-center py-8 space-y-2 opacity-60">
+            <i class="fa-regular fa-calendar-xmark text-3xl theme-text-accent"></i>
+            <p class="text-xs font-semibold">No hay citas registradas para este día.</p>
+          </div>
+        `;
+            } else {
+                dayAppointments.forEach(app => {
+                    const realIndex = allAppointments.findIndex(a => a.client === app.client && a.date === app.date && a.time === app.time);
+
+                    const card = document.createElement('div');
+                    card.className = "p-3.5 rounded-2xl border border-black/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3";
+                    card.style.backgroundColor = "var(--bg-input)";
+
+                    card.innerHTML = `
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] theme-text-accent font-bold px-2 py-0.5 rounded-md border border-current bg-black/10">⏰ ${app.time}</span>
+                <h4 class="font-bold text-xs">${app.client}</h4>
+              </div>
+              <p class="text-[11px] opacity-70 pl-1">${app.service}</p>
+              <p class="text-[10px] opacity-80 pl-1">⏳ Duración: <span class="font-semibold">${app.duration}</span></p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="exportSingleToGoogleCalendar(null, '${app.client}', '${app.date}', '${app.time}', '${app.duration}', '${app.service}')" class="px-2.5 py-1 rounded-lg border border-blue-500/30 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 text-[10px] font-bold flex items-center gap-1">
+                <i class="fa-brands fa-google"></i> Agendar a Google Calendar
+              </button>
+              <div class="flex items-center gap-1.5">
+                <button onclick="openEditModalByIndex(${realIndex})" title="Editar Cita" class="w-7 h-7 rounded-lg border border-black/10 dark:border-white/20 opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center text-xs transition-all">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button onclick="deleteAppointmentByIndex(${realIndex})" title="Eliminar Cita" class="w-7 h-7 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center text-xs transition-all">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          `;
+                    listEl.appendChild(card);
+                });
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeDayModal() {
+            document.getElementById('day-appointments-modal').classList.add('hidden');
+        }
+
+        function addAppointmentForSelectedDate() {
+            closeDayModal();
+            document.getElementById('manual-date').value = selectedDateForModal;
+            toggleMigrationTab('manual');
+            const step3Panel = document.getElementById('step-3');
+            step3Panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            step3Panel.classList.remove('step3-highlight');
+            void step3Panel.offsetWidth;
+            step3Panel.classList.add('step3-highlight');
+            setTimeout(() => {
+                document.getElementById('manual-client').focus();
+            }, 400);
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const title = document.getElementById('calendar-month-title');
+            grid.innerHTML = '';
+
+            const year = calendarViewDate.getFullYear();
+            const month = calendarViewDate.getMonth();
+
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            title.textContent = `${monthNames[month]} ${year}`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+
+            const appointments = getStoredAppointments();
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = "h-16 rounded-xl opacity-20 border border-transparent";
+                grid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const cell = document.createElement('div');
+                const formattedMonth = String(month + 1).padStart(2, '0');
+                const formattedDay = String(day).padStart(2, '0');
+                const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
+
+                const dayAppointments = appointments.filter(app => app.date === dateStr);
+                const hasAppointments = dayAppointments.length > 0;
+
+                const isToday = new Date().toISOString().split('T')[0] === dateStr;
+
+                let baseClasses = "h-16 rounded-xl p-1 flex flex-col justify-between border text-[10px] transition-all overflow-y-auto cursor-pointer hover:border-current hover:scale-[1.02]";
+
+                if (hasAppointments) {
+                    if (currentThemeKey === 'rainbow') {
+                        baseClasses += " rainbow-border-style shadow-sm";
+                    } else {
+                        baseClasses += " border-emerald-500/60 bg-emerald-500/10";
+                    }
+                } else if (isToday) {
+                    baseClasses += " theme-card border-current font-bold";
+                } else {
+                    baseClasses += " border-black/10 dark:border-white/10 opacity-80";
+                    cell.style.backgroundColor = "var(--bg-input)";
+                }
+
+                cell.className = baseClasses;
+                cell.setAttribute('onclick', `selectDateFromCalendar('${dateStr}')`);
+
+                let content = `<div class="flex justify-between items-center"><span class="font-bold ${isToday ? 'theme-text-accent' : ''}">${day}</span>`;
+                if (hasAppointments) {
+                    content += `<span class="w-1.5 h-1.5 rounded-full ${currentThemeKey === 'rainbow' ? 'rainbow-btn-style' : 'bg-emerald-500'}"></span>`;
+                }
+                content += `</div><div class="space-y-0.5 mt-0.5">`;
+
+                dayAppointments.forEach(app => {
+                    content += `<div class="truncate text-[8px] px-1 py-0.5 rounded font-semibold ${currentThemeKey === 'rainbow' ? 'rainbow-btn-style' : 'theme-accent text-white'}" title="${app.client} - ${app.service} (${app.time}, ${app.duration})">${app.client}</div>`;
+                });
+
+                content += `</div>`;
+                cell.innerHTML = content;
+                grid.appendChild(cell);
+            }
+        }
+
+        function renderAppointmentsList() {
+            const list = document.getElementById('appointments-preview-list');
+            const appointments = getStoredAppointments();
+            list.innerHTML = '';
+
+            document.getElementById('appointment-count').textContent = `${appointments.length} ${appointments.length === 1 ? 'Cita' : 'Citas'}`;
+
+            if (appointments.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 opacity-60 text-xs">No hay citas registradas aún.</div>`;
+                return;
+            }
+
+            appointments.forEach((app, index) => {
+                const card = document.createElement('div');
+                card.className = 'appointment-item p-4 rounded-2xl border border-black/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all';
+                card.style.backgroundColor = 'var(--bg-input)';
+
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-xs appointment-client-title">${app.client}</h4>
+                        <p class="text-[11px] opacity-70 appointment-service-desc">${app.service}</p>
+                        <div class="flex flex-wrap items-center gap-2 text-[10px]">
+                            <span class="theme-text-accent font-semibold appointment-datetime-tag">📅 <span class="date-val">${app.date}</span> — <span class="time-val">${app.time}</span></span>
+                            <span class="px-2 py-0.5 rounded-md border border-current opacity-80 font-medium">⏳ <span class="duration-val">${app.duration}</span></span>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="exportSingleToGoogleCalendar(this, '${app.client}', '${app.date}', '${app.time}', '${app.duration}', '${app.service}')" class="btn-gcal-action px-3 py-1.5 rounded-lg border border-blue-500/30 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-all">
+                            <i class="fa-brands fa-google"></i> Agendar a Google Calendar
+                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="openEditModalByIndex(${index})" title="Editar Cita" class="w-7 h-7 rounded-lg border border-black/10 dark:border-white/20 opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center text-xs transition-all">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteAppointmentByIndex(${index})" title="Eliminar Cita" class="w-7 h-7 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center text-xs transition-all">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function scrollToCreateAppointment() {
+            const step3Panel = document.getElementById('step-3');
+            step3Panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            step3Panel.classList.remove('step3-highlight');
+            void step3Panel.offsetWidth;
+            step3Panel.classList.add('step3-highlight');
+
+            toggleMigrationTab('manual');
+            setTimeout(() => {
+                document.getElementById('manual-client').focus();
+            }, 400);
+        }
+
+        function setMode(mode) {
+            isLightMode = (mode === 'light');
+            localStorage.setItem('kore_light_mode', isLightMode);
+
+            const body = document.getElementById('main-body');
+            const btnDark = document.getElementById('btn-mode-dark');
+            const btnLight = document.getElementById('btn-mode-light');
+            const modeIcon = document.getElementById('mode-icon');
+            const modeText = document.getElementById('mode-text');
+            const modeIconMobile = document.getElementById('mode-icon-mobile');
+
+            if (isLightMode) {
+                body.classList.add('light-mode');
+                if (currentThemeKey !== 'rainbow') {
+                    btnLight.className = "py-2 rounded-lg text-xs font-bold transition-all theme-accent text-white dynamic-accent-element";
+                    btnDark.className = "py-2 rounded-lg text-xs font-bold transition-all opacity-70 hover:opacity-100";
+                }
+                modeIcon.className = "fa-solid fa-sun text-amber-500";
+                modeIconMobile.className = "fa-solid fa-sun text-amber-500";
+                modeText.textContent = "Claro";
+            } else {
+                body.classList.remove('light-mode');
+                if (currentThemeKey !== 'rainbow') {
+                    btnDark.className = "py-2 rounded-lg text-xs font-bold transition-all theme-accent text-white dynamic-accent-element";
+                    btnLight.className = "py-2 rounded-lg text-xs font-bold transition-all opacity-70 hover:opacity-100";
+                }
+                modeIcon.className = "fa-solid fa-moon";
+                modeIconMobile.className = "fa-solid fa-moon";
+                modeText.textContent = "Oscuro";
+            }
+
+            applyCurrentStyle();
+        }
+
+        function toggleLightDarkMode() {
+            setMode(isLightMode ? 'dark' : 'light');
+        }
+
+        function setTheme(themeKey) {
+            currentThemeKey = themeKey;
+            localStorage.setItem('kore_theme', themeKey);
+            applyCurrentStyle();
+            renderCalendar();
+        }
+
+        function applyCurrentStyle() {
+            const root = document.documentElement;
+            const body = document.getElementById('main-body');
+            const dynamicElements = document.querySelectorAll('.dynamic-accent-element');
+            const themeButtons = document.querySelectorAll('.theme-btn');
+            const headerSteps = document.querySelectorAll('.header-nav-step');
+
+            if (currentThemeKey === 'rainbow') {
+                body.classList.add('bg-rainbow-animated');
+
+                headerSteps.forEach(step => {
+                    step.className = "header-nav-step px-2.5 py-1 rounded-lg border border-white/20 rainbow-btn-style font-bold transition-all shadow-md";
+                });
+
+                dynamicElements.forEach(el => {
+                    el.className = el.className.replace(/theme-accent/g, '') + ' rainbow-btn-style';
+                });
+
+                themeButtons.forEach(btn => {
+                    if (!btn.classList.contains('rainbow-btn-style')) {
+                        btn.classList.add('rainbow-border-style');
+                    }
+                });
+
+                root.style.setProperty('--accent-light', '#00dfd8');
+                root.style.setProperty('--border-color', isLightMode ? 'rgba(0, 112, 243, 0.3)' : 'rgba(0, 223, 216, 0.4)');
+                renderCalendar();
+                return;
+            }
+
+            body.classList.remove('bg-rainbow-animated');
+            const theme = themes[currentThemeKey];
+            root.style.setProperty('--accent', theme.accent);
+            root.style.setProperty('--accent-light', theme.accentLight);
+            root.style.setProperty('--border-color', isLightMode ? theme.borderLight : theme.borderDark);
+
+            headerSteps.forEach(step => {
+                step.className = "header-nav-step px-2.5 py-1 rounded-lg border border-black/10 dark:border-white/10 hover:border-current transition-all opacity-90 hover:opacity-100";
+                step.style.color = theme.accentLight;
+                step.style.backgroundColor = "var(--bg-input)";
+            });
+
+            themeButtons.forEach(btn => {
+                btn.classList.remove('rainbow-border-style');
+            });
+
+            dynamicElements.forEach(el => {
+                el.classList.remove('rainbow-btn-style');
+                if (!el.classList.contains('theme-accent')) {
+                    el.classList.add('theme-accent');
+                }
+            });
+
+            renderCalendar();
+        }
+
+        function updateAgendaName(value) {
+            const trimmed = value.trim();
+            document.getElementById('preview-title').textContent = trimmed === '' ? 'Mi Agenda' : trimmed;
+            localStorage.setItem(kk('kore_agenda_name'), trimmed);
+            localStorage.removeItem('kore_agenda_name');
+        }
+
+        function toggleMigrationTab(mode) {
+            const photoDiv = document.getElementById('migration-photo');
+            const manualDiv = document.getElementById('migration-manual');
+            const photoBtn = document.getElementById('btn-tab-photo');
+            const manualBtn = document.getElementById('btn-tab-manual');
+
+            const activeClass = currentThemeKey === 'rainbow' ? 'rainbow-btn-style' : 'theme-accent text-white';
+
+            if (mode === 'photo') {
+                photoDiv.classList.remove('hidden');
+                manualDiv.classList.add('hidden');
+                photoBtn.className = `py-2 rounded-lg transition-all ${activeClass}`;
+                manualBtn.className = "py-2 rounded-lg opacity-60 hover:opacity-100 transition-all";
+            } else {
+                manualDiv.classList.remove('hidden');
+                photoDiv.classList.add('hidden');
+                manualBtn.className = `py-2 rounded-lg transition-all ${activeClass}`;
+                photoBtn.className = "py-2 rounded-lg opacity-60 hover:opacity-100 transition-all";
+                closeWebcam();
+            }
+        }
+
+        async function openWebcam() {
+            const container = document.getElementById('webcam-container');
+            const video = document.getElementById('webcam-video');
+
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+                video.srcObject = videoStream;
+                container.classList.remove('hidden');
+            } catch (err) {
+                alert('No se pudo acceder a la cámara. Revisa los permisos de tu navegador.');
+            }
+        }
+
+        function closeWebcam() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            document.getElementById('webcam-container').classList.add('hidden');
+        }
+
+        function captureWebcamPhoto() {
+            const video = document.getElementById('webcam-video');
+            const canvas = document.getElementById('ocr-canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            closeWebcam();
+
+            processCanvasForOCR(canvas);
+        }
+
+        function processFileInput(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.getElementById('ocr-canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                processCanvasForOCR(canvas);
+            };
+            img.src = URL.createObjectURL(file);
+        }
+
+        async function processCanvasForOCR(canvas) {
+            const loader = document.getElementById('ocr-loader');
+            const resultBox = document.getElementById('ocr-result-box');
+            const statusText = document.getElementById('ocr-status');
+
+            loader.classList.remove('hidden');
+            resultBox.classList.add('hidden');
+
+            try {
+                statusText.textContent = "Aplicando filtros de imagen...";
+
+                const ctx = canvas.getContext('2d');
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    let avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    let v = avg < 140 ? 0 : 255;
+                    data[i] = v; data[i + 1] = v; data[i + 2] = v;
+                }
+                ctx.putImageData(imgData, 0, 0);
+
+                statusText.textContent = "Extrayendo texto con OCR...";
+                const worker = await Tesseract.createWorker('spa');
+                const ret = await worker.recognize(canvas);
+                await worker.terminate();
+
+                statusText.textContent = "Procesando respuesta...";
+
+                let rawText = ret.data.text.trim();
+
+                let detectedDate = extractDateFromText(rawText);
+                let detectedTime = extractTimeFromText(rawText);
+                let { clientName, serviceText } = extractClientAndService(rawText);
+
+                loader.classList.add('hidden');
+                resultBox.classList.remove('hidden');
+
+                document.getElementById('ocr-client-name').value = clientName;
+                document.getElementById('ocr-detected-date').value = detectedDate;
+                document.getElementById('ocr-detected-time').value = detectedTime || "11:00 AM";
+                document.getElementById('ocr-detected-duration').value = "1 hora";
+                document.getElementById('ocr-extracted-text').value = infallibleAiCorrector(serviceText);
+
+            } catch (err) {
+                loader.classList.add('hidden');
+                alert("Error al procesar imagen: " + err.message);
+            }
+        }
+
+        function extractDateFromText(text) {
+            if (!text) return new Date().toISOString().split('T')[0];
+
+            const currentYear = new Date().getFullYear();
+            const numericRegex = /(\b[0-3]?[0-9])[\/\.-]([0-1]?[0-9])(?:[\/\.-](20\d{2}|\d{2}))?\b/;
+            const numMatch = text.match(numericRegex);
+
+            if (numMatch) {
+                let day = parseInt(numMatch[1]);
+                let month = parseInt(numMatch[2]);
+                let year = numMatch[3] ? parseInt(numMatch[3]) : currentYear;
+
+                if (year < 100) year += 2000;
+                if (day <= 31 && month <= 12) {
+                    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                }
+            }
+
+            const textRegex = /(\b[0-3]?[0-9])\s+(?:de\s+)?(ene|enero|feb|febrero|mar|marzo|abr|abril|may|mayo|jun|junio|jul|julio|ago|agosto|sep|septiembre|oct|octubre|nov|noviembre|dic|diciembre)/i;
+            const textMatch = text.match(textRegex);
+
+            if (textMatch) {
+                let day = parseInt(textMatch[1]);
+                let monthKey = textMatch[2].toLowerCase();
+                let month = MONTHS_MAP[monthKey] || '01';
+
+                if (day <= 31) {
+                    return `${currentYear}-${month}-${String(day).padStart(2, '0')}`;
+                }
+            }
+
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function extractTimeFromText(text) {
+            if (!text) return null;
+
+            const timeRegex = /([0-2]?[0-9])\s*[:\.]?\s*([0-5][0-9])?\s*(am|pm|hrs|hs|h)?/i;
+            const matches = text.match(timeRegex);
+
+            if (matches) {
+                let hour = parseInt(matches[1]);
+                let mins = matches[2] || "00";
+                let period = matches[3] ? matches[3].toLowerCase() : "";
+
+                if (isNaN(hour) || hour > 24) return null;
+
+                let isPM = period.includes('p') || (hour >= 12 && hour <= 23 && !period.includes('a'));
+
+                if (hour > 12) {
+                    hour -= 12;
+                    isPM = true;
+                } else if (hour === 0) {
+                    hour = 12;
+                }
+
+                let formattedHour = hour < 10 ? `0${hour}` : `${hour}`;
+                let periodStr = isPM ? 'PM' : 'AM';
+
+                return `${formattedHour}:${mins} ${periodStr}`;
+            }
+
+            return null;
+        }
+
+        function extractClientAndService(rawText) {
+            if (!rawText) return { clientName: "Cliente Nuevo", serviceText: "Consulta / Servicio" };
+
+            let lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let clientName = "";
+            let serviceText = "";
+
+            for (let line of lines) {
+                if (/(\d{1,2}[\/\.-]\d{1,2})|(\d{1,2}:\d{2})|(am|pm)/i.test(line) && line.length < 15) continue;
+
+                if (!clientName && line.length > 2) {
+                    clientName = line.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').trim();
+                } else {
+                    serviceText += " " + line;
+                }
+            }
+
+            return {
+                clientName: clientName.trim() || "Cliente Escaneado",
+                serviceText: serviceText.trim() || "Servicio General"
+            };
+        }
+
+        function levenshteinDistance(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1).toLowerCase() === a.charAt(j - 1).toLowerCase()) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        function infallibleAiCorrector(rawText) {
+            if (!rawText || rawText.length < 2) return "Servicio de Valoración";
+
+            let text = rawText.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s:.,\-\/]/g, ' ');
+            let words = text.split(/\s+/);
+            let correctedWords = [];
+
+            words.forEach(word => {
+                let cleanWord = word.trim();
+                if (cleanWord.length <= 2) {
+                    correctedWords.push(cleanWord);
+                    return;
+                }
+
+                let bestMatch = cleanWord;
+                let lowestDistance = 99;
+
+                MASTER_DICTIONARY.forEach(dictWord => {
+                    let dist = levenshteinDistance(cleanWord, dictWord);
+                    if (dist < lowestDistance && dist <= Math.floor(dictWord.length * 0.45)) {
+                        lowestDistance = dist;
+                        bestMatch = dictWord;
+                    }
+                });
+
+                correctedWords.push(bestMatch);
+            });
+
+            return correctedWords.join(" ").trim();
+        }
+
+        function convertOCRToAppointment() {
+            const client = document.getElementById('ocr-client-name').value.trim() || "Cliente Escaneado";
+            const date = document.getElementById('ocr-detected-date').value || new Date().toISOString().split('T')[0];
+            const time = document.getElementById('ocr-detected-time').value || "11:00 AM";
+            const duration = document.getElementById('ocr-detected-duration').value || "1 hora";
+            const service = document.getElementById('ocr-extracted-text').value.trim() || "Servicio General";
+
+            addAppointmentToList(client, date, time, duration, service);
+            document.getElementById('ocr-result-box').classList.add('hidden');
+        }
+
+        function addManualAppointment() {
+            const client = document.getElementById('manual-client').value.trim();
+            const date = document.getElementById('manual-date').value;
+            const time = document.getElementById('manual-time').value;
+            const duration = document.getElementById('manual-duration').value;
+            const service = document.getElementById('manual-service').value.trim();
+
+            if (!client || !date || !time) {
+                alert('Por favor ingresa el nombre de la clienta, fecha y hora.');
+                return;
+            }
+
+            addAppointmentToList(client, date, time, duration, service || 'Servicio General');
+
+            document.getElementById('manual-client').value = '';
+            document.getElementById('manual-service').value = '';
+            document.getElementById('manual-time').selectedIndex = 0;
+            document.getElementById('manual-duration').selectedIndex = 5;
+        }
+
+        function addAppointmentToList(client, date, time, duration, service) {
+            const appointments = getStoredAppointments();
+            appointments.unshift({ client, service, date, time, duration });
+            saveAppointmentsToStorage(appointments);
+
+            renderAppointmentsList();
+            renderCalendar();
+
+            syncAppointmentToGoogleCalendar(client, date, time, duration, service);
+        }
+
+        function openEditModalByIndex(index) {
+            activeEditIndex = index;
+            const appointments = getStoredAppointments();
+            const app = appointments[index];
+            if (!app) return;
+
+            document.getElementById('edit-client-input').value = app.client;
+            document.getElementById('edit-service-input').value = app.service;
+            document.getElementById('edit-date-input').value = app.date;
+            document.getElementById('edit-time-input').value = app.time;
+            document.getElementById('edit-duration-input').value = app.duration;
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            activeEditIndex = null;
+        }
+
+        function saveAppointmentEdit() {
+            if (activeEditIndex === null) return;
+
+            const newClient = document.getElementById('edit-client-input').value.trim();
+            const newService = document.getElementById('edit-service-input').value.trim();
+            const newDate = document.getElementById('edit-date-input').value;
+            const newTime = document.getElementById('edit-time-input').value.trim();
+            const newDuration = document.getElementById('edit-duration-input').value;
+
+            if (!newClient) {
+                alert('El nombre del cliente no puede estar vacío.');
+                return;
+            }
+
+            let appointments = getStoredAppointments();
+            appointments[activeEditIndex] = {
+                client: newClient,
+                service: newService || 'Servicio General',
+                date: newDate,
+                time: newTime,
+                duration: newDuration
+            };
+
+            saveAppointmentsToStorage(appointments);
+            closeEditModal();
+            renderAppointmentsList();
+            renderCalendar();
+
+            syncAppointmentToGoogleCalendar(newClient, newDate, newTime, newDuration, newService || 'Servicio General');
+        }
+
+        function deleteAppointmentByIndex(index) {
+            let appointments = getStoredAppointments();
+            appointments.splice(index, 1);
+            saveAppointmentsToStorage(appointments);
+
+            renderAppointmentsList();
+            renderCalendar();
+        }
+
+        // --- FUNCIONALIDAD DE RECONOCIMIENTO DE VOZ Y MICRÓFONO FLOTANTE ---
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                console.warn("Speech Recognition API no soportada en este navegador.");
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                let interim = "";
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscriptBuffer += event.results[i][0].transcript + " ";
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                const transcriptBox = document.getElementById('voice-transcript');
+                transcriptBox.textContent = finalTranscriptBuffer + interim;
+            };
+
+            recognition.onerror = (event) => {
+                console.warn("Error en reconocimiento de voz:", event.error);
+            };
+
+            recognition.onend = () => {
+                if (isRecordingVoice) {
+                    try { recognition.start(); } catch(e) {}
+                }
+            };
+        }
+
+        async function toggleVoiceRecording() {
+            const card = document.getElementById('voice-recording-card');
+            const micBtn = document.getElementById('floating-mic-btn');
+            const micIcon = document.getElementById('mic-icon-element');
+            const transcriptBox = document.getElementById('voice-transcript');
+
+            if (!isRecordingVoice) {
+                // Iniciar grabación y resetear buffer previo
+                finalTranscriptBuffer = "";
+                transcriptBox.textContent = "Escuchando...";
+
+                if (!recognition) {
+                    alert("Tu navegador no soporta reconocimiento de voz. Usa Google Chrome o Edge.");
+                    return;
+                }
+
+                try {
+                    microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    setupAudioVisualizer(microphoneStream);
+                } catch (e) {
+                    console.warn("No se pudo obtener acceso al micrófono para análisis visual:", e);
+                }
+
+                isRecordingVoice = true;
+                card.classList.remove('hidden');
+                micIcon.className = "fa-solid fa-stop";
+                
+                voiceSecondsElapsed = 0;
+                document.getElementById('voice-timer').textContent = "00:00";
+                voiceTimerInterval = setInterval(() => {
+                    voiceSecondsElapsed++;
+                    let mins = String(Math.floor(voiceSecondsElapsed / 60)).padStart(2, '0');
+                    let secs = String(voiceSecondsElapsed % 60).padStart(2, '0');
+                    document.getElementById('voice-timer').textContent = `${mins}:${secs}`;
+                }, 1000);
+
+                try { recognition.start(); } catch(e) {}
+
+            } else {
+                stopVoiceRecording();
+            }
+        }
+
+        function stopVoiceRecording() {
+            if (!isRecordingVoice) return;
+            isRecordingVoice = false;
+
+            const card = document.getElementById('voice-recording-card');
+            const micIcon = document.getElementById('mic-icon-element');
+            const transcriptBox = document.getElementById('voice-transcript');
+            const micBtn = document.getElementById('floating-mic-btn');
+
+            card.classList.add('hidden');
+            micIcon.className = "fa-solid fa-microphone";
+            micBtn.style.transform = "scale(1)";
+
+            clearInterval(voiceTimerInterval);
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+            }
+
+            if (microphoneStream) {
+                microphoneStream.getTracks().forEach(t => t.stop());
+                microphoneStream = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            const spokenText = (finalTranscriptBuffer + " " + transcriptBox.textContent).trim();
+            
+            // Limpiar caja y buffer para el siguiente uso
+            finalTranscriptBuffer = "";
+            transcriptBox.textContent = "Escuchando...";
+
+            if (spokenText && spokenText !== "Escuchando..." && spokenText.length > 3) {
+                processVoiceTranscriptToAppointment(spokenText);
+            }
+        }
+
+        function setupAudioVisualizer(stream) {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                const micBtn = document.getElementById('floating-mic-btn');
+
+                const updateVolumeAnimation = () => {
+                    if (!isRecordingVoice) return;
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    let sum = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        sum += dataArray[i];
+                    }
+                    let average = sum / bufferLength;
+
+                    // Escalar el botón flotante proporcionalmente al volumen y tono de voz (entre 1 y 1.28)
+                    let scaleFactor = 1 + (average / 128) * 0.28;
+                    micBtn.style.transform = `scale(${scaleFactor})`;
+
+                    animationFrameId = requestAnimationFrame(updateVolumeAnimation);
+                };
+                updateVolumeAnimation();
+            } catch (e) {
+                console.warn("Error configurando analizador de audio:", e);
+            }
+        }
+
+        function processVoiceTranscriptToAppointment(text) {
+            let clientName = "Cliente por Voz";
+            let detectedDate = new Date().toISOString().split('T')[0];
+            let detectedTime = "11:00 AM";
+            let serviceText = infallibleAiCorrector(text);
+
+            // Identificación optimizada del nombre del cliente
+            const namePatterns = [
+                /(?:cita\s+para|cliente|con|para\s+la\s+clienta|paciente)\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ]+(?:\s+[a-zA-ZáéíóÚÁÉÍÓÚñÑ]+)?)/i,
+                /^([a-zA-ZáéíóúÁÉÍÓÚñÑ]+\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ]+)\s+(?:el|a\s+las|para)/i
+            ];
+
+            let foundName = false;
+            for (let pattern of namePatterns) {
+                let match = text.match(pattern);
+                if (match && match[1]) {
+                    let candidate = match[1].trim();
+                    // Evitar que capture palabras clave de fecha/hora como nombres
+                    if (!/(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|hoy|mañana|lunes|martes|miércoles|jueves|viernes|sábado|domingo|alas)/i.test(candidate)) {
+                        clientName = candidate.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                        foundName = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!foundName) {
+                let words = text.split(/\s+/).filter(w => w.length > 2);
+                if (words.length >= 2) {
+                    clientName = `${words[0].charAt(0).toUpperCase() + words[0].slice(1)} ${words[1].charAt(0).toUpperCase() + words[1].slice(1)}`;
+                }
+            }
+
+            let parsedDate = extractDateFromText(text);
+            if (parsedDate) detectedDate = parsedDate;
+
+            let parsedTime = extractTimeFromText(text);
+            if (parsedTime) detectedTime = parsedTime;
+
+            addAppointmentToList(clientName, detectedDate, detectedTime, "1 hora", serviceText);
+            alert(`¡Cita agendada con éxito por voz!\nCliente: ${clientName}\nFecha: ${detectedDate} a las ${detectedTime}\nObjetivo: ${serviceText}`);
+        }
+    </script>
+
+    <!-- ===== ACCESO AUTORIZADO · MI CUENTA · ELIMINAR CUENTA ===== -->
+    <script>
+        (function () {
+            if (!__session) return;                       // ya se está redirigiendo al login
+            const acc = __account;
+            const $ = (id) => document.getElementById(id);
+            let profile = acc.getCachedProfile();
+            let state = 'checking';                       // checking | pending | app
+            let timer = null;
+
+            function setState(next) {
+                state = next;
+                $('auth-guard').classList.toggle('hidden', next === 'app');
+                $('guard-loading').classList.toggle('hidden', next !== 'checking');
+                $('guard-pending').classList.toggle('hidden', next !== 'pending');
+                if (next === 'app') document.body.style.overflow = '';
+                else document.body.style.overflow = 'hidden';
+                clearInterval(timer);
+                timer = setInterval(verify, next === 'pending' ? 12000 : 45000);
+            }
+
+            function paintProfile(p) {
+                const name = (p && p.name) || __session.username;
+                const user = '@' + ((p && p.username) || __session.username);
+                ['guard-name', 'acc-name'].forEach((id) => { $(id).textContent = name; });
+                ['guard-user', 'acc-user'].forEach((id) => { $(id).textContent = user; });
+            }
+
+            function notice(text) {
+                const el = $('guard-notice');
+                el.textContent = text || '';
+                el.classList.toggle('hidden', !text);
+            }
+
+            async function verify(manual) {
+                try {
+                    const p = await acc.ensureProfile(__session, profile && profile.name);
+                    const wasInApp = state === 'app';
+                    profile = p; acc.cacheProfile(p); paintProfile(p);
+                    if (p.approved) { notice(''); setState('app'); }
+                    else {
+                        notice(wasInApp ? 'La administración suspendió tu acceso a la agenda.'
+                            : (manual === true ? 'Todavía no tienes autorización. Esta pantalla se actualizará sola cuando la recibas.' : ''));
+                        setState('pending');
+                    }
+                } catch (e) {
+                    if (e.status === 400 || e.status === 401) return logoutKore(true);
+                    if (e.code === 'NETWORK' && profile && profile.approved) { paintProfile(profile); return setState('app'); }  // sin internet: usa el último estado
+                    if (state === 'app') return;                                                                                   // error pasajero con la agenda abierta
+                    paintProfile(profile);
+                    notice(KORE.friendlyError(e));
+                    setState('pending');
+                }
+            }
+
+            window.guardCheckNow = async function () {
+                const b = $('guard-check-btn');
+                b.disabled = true; b.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verificando...';
+                await verify(true);
+                b.disabled = false; b.innerHTML = '<i class="fa-solid fa-rotate"></i> Verificar ahora';
+            };
+
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) verify(); });
+
+            // ----- cerrar sesión -----
+            window.logoutKore = function (expired) {
+                acc.clear();
+                location.replace(KORE.CONFIG.pages.login);
+            };
+
+            // ----- mi cuenta -----
+            window.openAccountModal = function () {
+                paintProfile(profile);
+                $('delete-password').value = '';
+                $('delete-error').classList.add('hidden');
+                $('account-modal').classList.remove('hidden');
+            };
+            window.closeAccountModal = function () { $('account-modal').classList.add('hidden'); };
+            $('account-modal').addEventListener('click', (e) => { if (e.target === $('account-modal')) window.closeAccountModal(); });
+
+            window.toggleDeletePw = function () {
+                const i = $('delete-password'); const show = i.type === 'password';
+                i.type = show ? 'text' : 'password';
+                $('delete-eye').className = 'fa-regular ' + (show ? 'fa-eye-slash' : 'fa-eye');
+            };
+
+            // ----- eliminar cuenta (exige la contraseña) -----
+            window.deleteMyAccount = async function () {
+                const err = $('delete-error'); const btn = $('delete-btn');
+                const pw = $('delete-password').value;
+                err.classList.add('hidden');
+                if (!pw) { err.textContent = 'Escribe tu contraseña para confirmar.'; err.classList.remove('hidden'); return; }
+                if (!confirm('¿Seguro que quieres eliminar tu cuenta? Esta acción es permanente y no se puede deshacer.')) return;
+                btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Eliminando...';
+                try {
+                    const uid = await acc.deleteOwnAccount(pw);
+                    localStorage.removeItem('kore_appointments_' + uid);
+                    localStorage.removeItem('kore_agenda_name_' + uid);
+                    alert('Tu cuenta fue eliminada. Gracias por haber usado KORE Studio.');
+                    location.replace(KORE.CONFIG.pages.register);
+                } catch (e) {
+                    const wrong = ['INVALID_LOGIN_CREDENTIALS', 'INVALID_PASSWORD'].includes(e.code);
+                    err.textContent = wrong ? 'Contraseña incorrecta. No se eliminó nada.' : KORE.friendlyError(e);
+                    err.classList.remove('hidden');
+                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-trash"></i> Eliminar mi cuenta definitivamente';
+                }
+            };
+
+            // ----- arranque -----
+            paintProfile(profile);
+            if (!KORE.isConfigured()) { notice('Falta configurar la base de datos: pega tu apiKey y projectId en kore-core.js.'); setState('pending'); return; }
+            setState('checking');
+            verify();
+        })();
+    </script>
+</body>
+
+</html>

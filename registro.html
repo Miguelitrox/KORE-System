@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro | KORE Studio</title>
+    <link rel="icon" type="image/png" href="isotipo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0d0d0d;
+            --bg-card: #121212;
+            --bg-input: rgba(0, 0, 0, 0.5);
+            --border-color: rgba(255, 20, 147, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #ff1493;
+            --accent-light: #ff66c4;
+            --line: rgba(255, 255, 255, 0.12);
+            --header-bg: rgba(0, 0, 0, 0.6);
+        }
+        body.light-mode {
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-input: #f8fafc;
+            --border-color: rgba(0, 0, 0, 0.12);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --line: rgba(0, 0, 0, 0.12);
+            --header-bg: rgba(255, 255, 255, 0.9);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+            font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg-main); color: var(--text-main);
+            transition: background-color .4s ease, color .4s ease;
+        }
+        header.top {
+            position: sticky; top: 0; z-index: 10; background: var(--header-bg);
+            backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); padding: 12px 16px;
+        }
+        .top-in { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .brand { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: .4px; }
+        .brand img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
+        .brand .acc { color: var(--accent-light); }
+        .tag { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--accent-light); }
+        .pills { display: flex; gap: 8px; align-items: center; }
+        .pill {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px;
+            border: 1px solid var(--line); background: transparent; color: var(--text-main);
+            font: 600 12px 'Inter', sans-serif; cursor: pointer; text-decoration: none; transition: opacity .2s;
+        }
+        .pill:hover { opacity: .8; }
+        .pill.wa { color: #34d399; border-color: rgba(52, 211, 153, .35); background: rgba(16, 185, 129, .1); }
+        main.center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+        .wrap { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; }
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 24px;
+            padding: 26px 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+        }
+        .step-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+        .badge {
+            width: 34px; height: 34px; border-radius: 12px; background: var(--accent); color: #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+        }
+        .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: var(--accent-light); text-transform: uppercase; }
+        h2 { margin: 2px 0 0; font-family: 'Outfit', sans-serif; font-size: 21px; font-weight: 700; }
+        .lead { color: var(--text-muted); font-size: 12px; line-height: 1.6; margin: 0 0 14px; }
+        .segment { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg-input); margin-bottom: 16px; }
+        .seg { flex: 1; text-align: center; padding: 9px 6px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-decoration: none; transition: all .2s; }
+        .seg.active { background: var(--accent); color: #fff; }
+        label { display: block; margin: 12px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--text-muted); text-transform: uppercase; }
+        input[type=text], input[type=password], input[type=search] {
+            width: 100%; padding: 12px 14px; background: var(--bg-input); border: 1px solid var(--line);
+            border-radius: 12px; color: var(--text-main); font: 400 14px 'Inter', sans-serif; transition: all .25s;
+        }
+        input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+        .pw { position: relative; }
+        .pw input { padding-right: 44px; }
+        .eye { position: absolute; right: 4px; top: 0; bottom: 0; width: 40px; background: none; border: 0; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+        .hint { margin: 6px 0 0; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+        .btn {
+            width: 100%; margin-top: 18px; padding: 14px; border: 0; border-radius: 12px; background: var(--accent); color: #fff;
+            font: 700 13px 'Inter', sans-serif; letter-spacing: .3px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 10px 24px -10px var(--accent); transition: filter .2s, transform .1s;
+        }
+        .btn:hover { filter: brightness(1.15); }
+        .btn:active { transform: translateY(1px); }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+        .btn.ghost { background: transparent; color: var(--text-main); border: 1px solid var(--line); box-shadow: none; }
+        .btn.danger { background: #ef4444; box-shadow: 0 10px 24px -10px #ef4444; }
+        .box { display: none; margin-top: 14px; padding: 12px; border-radius: 12px; font-size: 12px; line-height: 1.5; gap: 8px; align-items: flex-start; }
+        .box.show { display: flex; }
+        .box.err { border: 1px solid rgba(239, 68, 68, .45); background: rgba(239, 68, 68, .1); color: #ef4444; }
+        .box.ok { border: 1px solid rgba(16, 185, 129, .45); background: rgba(16, 185, 129, .1); color: #10b981; }
+        .foot { display: block; margin-top: 16px; text-align: center; font-size: 12px; color: var(--text-muted); cursor: pointer; background: none; border: 0; width: 100%; text-decoration: none; }
+        .foot b { color: var(--accent-light); }
+        .note { text-align: center; font-size: 11px; color: var(--text-muted); line-height: 1.6; margin: 0; }
+        .center-txt { text-align: center; }
+        [hidden] { display: none !important; }
+        .spin { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <header class="top">
+        <div class="top-in">
+            <div class="brand">
+                <img src="isotipo.png" alt="KORE">
+                <span>KORE <span class="acc">Studio</span></span>
+            </div>
+            <div class="pills">
+                <button class="pill" onclick="KORE.toggleMode()" type="button">
+                    <i id="mode-icon" class="fa-solid fa-moon"></i><span id="mode-text">Oscuro</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="center">
+        <div class="wrap">
+            <section class="card">
+                <div class="step-head">
+                    <span class="badge"><i class="fa-solid fa-user-plus"></i></span>
+                    <div>
+                        <div class="eyebrow">Plataforma Digital</div>
+                        <h2>Crea tu cuenta</h2>
+                    </div>
+                </div>
+
+                <nav class="segment">
+                    <a class="seg" href="login.html">Iniciar sesión</a>
+                    <a class="seg active" href="registro.html">Registrarme</a>
+                </nav>
+
+                <form id="formRegistro" novalidate>
+                    <label for="nombre">Nombre completo</label>
+                    <input type="text" id="nombre" placeholder="Ej. Ana Gómez" autocomplete="name">
+
+                    <label for="usuario">Usuario</label>
+                    <input type="text" id="usuario" placeholder="Ej. ana.gomez" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+                    <p class="hint">De 3 a 20 caracteres: letras, números, punto o guion bajo.</p>
+
+                    <label for="password">Contraseña</label>
+                    <div class="pw">
+                        <input type="password" id="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+                        <button type="button" class="eye" data-eye="password" aria-label="Mostrar contraseña"><i class="fa-regular fa-eye"></i></button>
+                    </div>
+
+                    <label for="password2">Confirmar contraseña</label>
+                    <div class="pw">
+                        <input type="password" id="password2" placeholder="Repite tu contraseña" autocomplete="new-password">
+                        <button type="button" class="eye" data-eye="password2" aria-label="Mostrar contraseña"><i class="fa-regular fa-eye"></i></button>
+                    </div>
+
+                    <label for="palabra">Palabra secreta de recuperación</label>
+                    <input type="text" id="palabra" placeholder="Una palabra o frase que solo tú sepas" autocomplete="off">
+                    <p class="hint">Te la pediremos junto con tu nombre y usuario si algún día olvidas tu contraseña. Guárdala bien.</p>
+
+                    <div class="box err" id="err"></div>
+                    <div class="box ok" id="ok"></div>
+                    <button type="submit" class="btn" id="btn">Crear cuenta</button>
+                    <a class="foot" href="login.html">¿Ya tienes cuenta? <b>Inicia sesión</b></a>
+                </form>
+            </section>
+
+            <p class="note">Después de registrarte, la administración de KORE Studio debe autorizar tu acceso para que puedas usar la agenda.</p>
+
+            <div class="center-txt">
+                <a class="pill wa" target="_blank" rel="noopener" href="https://wa.me/523317609455?text=Hola,%20necesito%20ayuda%20del%20soporte%20t%C3%A9cnico%20respecto%20a%20KORE%20Studio">
+                    <i class="fa-brands fa-whatsapp"></i><span>Soporte Técnico</span>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script src="kore-core.js"></script>
+    <script>
+        KORE.applyTheme();
+        const acc = KORE.account('client');
+        const $ = (id) => document.getElementById(id);
+
+        if (acc.getSession()) location.replace(KORE.CONFIG.pages.agenda);
+
+        document.querySelectorAll('[data-eye]').forEach((b) => b.addEventListener('click', () => {
+            const input = $(b.dataset.eye);
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            b.innerHTML = '<i class="fa-regular ' + (show ? 'fa-eye-slash' : 'fa-eye') + '"></i>';
+        }));
+
+        const showBox = (el, text) => { el.innerHTML = '<i class="fa-solid ' + (el.classList.contains('ok') ? 'fa-circle-check' : 'fa-circle-exclamation') + '" style="margin-top:2px"></i><span></span>'; el.lastChild.textContent = text; el.classList.add('show'); };
+        const hideBox = (el) => el.classList.remove('show');
+        const setBusy = (busy, label) => { $('btn').disabled = busy; $('btn').innerHTML = busy ? '<span class="spin"></span>' : label; };
+
+        $('formRegistro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if ($('btn').disabled) return;
+            hideBox($('err')); hideBox($('ok'));
+            if (!KORE.isConfigured()) return showBox($('err'), 'Falta configurar la base de datos: pega tu apiKey y projectId en kore-core.js.');
+
+            const nombre = $('nombre').value.trim().replace(/\s+/g, ' ');
+            const usuario = KORE.cleanUsername($('usuario').value);
+            const pass = $('password').value;
+            const palabra = $('palabra').value.trim();
+
+            if (nombre.length < 2) return showBox($('err'), 'Escribe tu nombre completo.');
+            if (!KORE.validUsername(usuario)) return showBox($('err'), 'El usuario debe tener de 3 a 20 caracteres: letras, números, punto o guion bajo.');
+            if (pass.length < 6) return showBox($('err'), 'La contraseña debe tener al menos 6 caracteres.');
+            if (pass !== $('password2').value) return showBox($('err'), 'Las contraseñas no coinciden.');
+            if (palabra.length < 3) return showBox($('err'), 'Elige una palabra secreta de recuperación (mínimo 3 caracteres).');
+
+            setBusy(true);
+            let sess;
+            try {
+                sess = await acc.signUp(usuario, pass);
+            } catch (err) {
+                showBox($('err'), KORE.friendlyError(err));
+                return setBusy(false, 'Crear cuenta');
+            }
+            try {
+                const profile = await acc.createProfile(sess.uid, nombre, sess.username);
+                await acc.saveRecovery(sess.uid, palabra);
+                acc.cacheProfile(profile);
+                showBox($('ok'), 'Cuenta creada. Ahora espera la autorización de la administración. Redirigiendo...');
+                setTimeout(() => { location.href = KORE.CONFIG.pages.agenda; }, 1600);
+            } catch (err) {
+                showBox($('err'), 'Tu cuenta se creó, pero no se pudo guardar tu perfil: ' + KORE.friendlyError(err) + ' Inicia sesión para completarlo.');
+                setBusy(false, 'Crear cuenta');
+            }
+        });
+    </script>
+</body>
+</html>
