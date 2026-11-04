@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de la CEO | KORE Studio</title>
+    <link rel="icon" type="image/png" href="isotipo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0d0d0d;
+            --bg-card: #121212;
+            --bg-input: rgba(0, 0, 0, 0.5);
+            --border-color: rgba(255, 20, 147, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #ff1493;
+            --accent-light: #ff66c4;
+            --line: rgba(255, 255, 255, 0.12);
+            --header-bg: rgba(0, 0, 0, 0.6);
+        }
+        body.light-mode {
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-input: #f8fafc;
+            --border-color: rgba(0, 0, 0, 0.12);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --line: rgba(0, 0, 0, 0.12);
+            --header-bg: rgba(255, 255, 255, 0.9);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+            font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg-main); color: var(--text-main);
+            transition: background-color .4s ease, color .4s ease;
+        }
+        header.top {
+            position: sticky; top: 0; z-index: 10; background: var(--header-bg);
+            backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); padding: 12px 16px;
+        }
+        .top-in { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .brand { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: .4px; }
+        .brand img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
+        .brand .acc { color: var(--accent-light); }
+        .tag { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--accent-light); }
+        .pills { display: flex; gap: 8px; align-items: center; }
+        .pill {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px;
+            border: 1px solid var(--line); background: transparent; color: var(--text-main);
+            font: 600 12px 'Inter', sans-serif; cursor: pointer; text-decoration: none; transition: opacity .2s;
+        }
+        .pill:hover { opacity: .8; }
+        .pill.wa { color: #34d399; border-color: rgba(52, 211, 153, .35); background: rgba(16, 185, 129, .1); }
+        main.center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+        .wrap { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; }
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 24px;
+            padding: 26px 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+        }
+        .step-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+        .badge {
+            width: 34px; height: 34px; border-radius: 12px; background: var(--accent); color: #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+        }
+        .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: var(--accent-light); text-transform: uppercase; }
+        h2 { margin: 2px 0 0; font-family: 'Outfit', sans-serif; font-size: 21px; font-weight: 700; }
+        .lead { color: var(--text-muted); font-size: 12px; line-height: 1.6; margin: 0 0 14px; }
+        .segment { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg-input); margin-bottom: 16px; }
+        .seg { flex: 1; text-align: center; padding: 9px 6px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-decoration: none; transition: all .2s; }
+        .seg.active { background: var(--accent); color: #fff; }
+        label { display: block; margin: 12px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--text-muted); text-transform: uppercase; }
+        input[type=text], input[type=password], input[type=search] {
+            width: 100%; padding: 12px 14px; background: var(--bg-input); border: 1px solid var(--line);
+            border-radius: 12px; color: var(--text-main); font: 400 14px 'Inter', sans-serif; transition: all .25s;
+        }
+        input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+        .pw { position: relative; }
+        .pw input { padding-right: 44px; }
+        .eye { position: absolute; right: 4px; top: 0; bottom: 0; width: 40px; background: none; border: 0; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+        .hint { margin: 6px 0 0; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+        .btn {
+            width: 100%; margin-top: 18px; padding: 14px; border: 0; border-radius: 12px; background: var(--accent); color: #fff;
+            font: 700 13px 'Inter', sans-serif; letter-spacing: .3px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 10px 24px -10px var(--accent); transition: filter .2s, transform .1s;
+        }
+        .btn:hover { filter: brightness(1.15); }
+        .btn:active { transform: translateY(1px); }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+        .btn.ghost { background: transparent; color: var(--text-main); border: 1px solid var(--line); box-shadow: none; }
+        .btn.danger { background: #ef4444; box-shadow: 0 10px 24px -10px #ef4444; }
+        .box { display: none; margin-top: 14px; padding: 12px; border-radius: 12px; font-size: 12px; line-height: 1.5; gap: 8px; align-items: flex-start; }
+        .box.show { display: flex; }
+        .box.err { border: 1px solid rgba(239, 68, 68, .45); background: rgba(239, 68, 68, .1); color: #ef4444; }
+        .box.ok { border: 1px solid rgba(16, 185, 129, .45); background: rgba(16, 185, 129, .1); color: #10b981; }
+        .foot { display: block; margin-top: 16px; text-align: center; font-size: 12px; color: var(--text-muted); cursor: pointer; background: none; border: 0; width: 100%; text-decoration: none; }
+        .foot b { color: var(--accent-light); }
+        .note { text-align: center; font-size: 11px; color: var(--text-muted); line-height: 1.6; margin: 0; }
+        .center-txt { text-align: center; }
+        [hidden] { display: none !important; }
+        .spin { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+
+        .container { width: 100%; max-width: 760px; margin: 0 auto; padding: 18px 16px 60px; display: flex; flex-direction: column; gap: 16px; }
+        .iconbtn { width: 34px; height: 34px; padding: 0; justify-content: center; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .stat { border: 1px solid var(--line); background: var(--bg-input); border-radius: 14px; padding: 12px; text-align: center; }
+        .stat b { display: block; font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; }
+        .stat span { font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: .04em; text-transform: uppercase; }
+        .seg-btn { flex: 1; border: 0; background: transparent; padding: 9px 4px; border-radius: 10px; font: 700 11px 'Inter', sans-serif; color: var(--text-muted); cursor: pointer; transition: all .2s; }
+        .seg-btn.active { background: var(--accent); color: #fff; }
+        .users { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+        .user { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-input); }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font: 800 15px 'Outfit', sans-serif; flex-shrink: 0; }
+        .u-info { flex: 1; min-width: 0; }
+        .u-name { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .u-user { color: var(--accent-light); font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .u-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 10px; color: var(--text-muted); flex-wrap: wrap; }
+        .st { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid; }
+        .st.ok { color: #10b981; border-color: rgba(16,185,129,.5); background: rgba(16,185,129,.12); }
+        .st.wait { color: #f59e0b; border-color: rgba(245,158,11,.5); background: rgba(245,158,11,.12); }
+        .act { border: 0; border-radius: 10px; padding: 9px 12px; font: 700 11px 'Inter', sans-serif; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; min-width: 96px; justify-content: center; }
+        .act.grant { background: var(--accent); color: #fff; }
+        .act.revoke { background: rgba(239,68,68,.1); color: #ef4444; border: 1px solid rgba(239,68,68,.5); }
+        .act:disabled { opacity: .5; cursor: not-allowed; }
+        .empty { text-align: center; color: var(--text-muted); font-size: 12px; padding: 24px 0; }
+        .toast { position: fixed; top: 74px; left: 50%; transform: translateX(-50%) translateY(-20px); background: #059669; color: #fff; font: 700 12px 'Inter', sans-serif; padding: 10px 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.3); opacity: 0; pointer-events: none; transition: all .3s; z-index: 50; max-width: 90vw; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .modal { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.7); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .modal .card { width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; }
+        .themes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+        .theme-btn { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-input); color: var(--text-main); font: 600 11px 'Inter', sans-serif; cursor: pointer; }
+        .theme-btn.on { border-width: 2px; }
+        .dot { width: 14px; height: 14px; border-radius: 50%; }
+        .row-end { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        @media (max-width: 520px) { .act span.t { display: none; } .act { min-width: 40px; } }
+    </style>
+</head>
+<body>
+
+    <div class="toast" id="toast"></div>
+
+    <header class="top">
+        <div class="top-in">
+            <div class="brand">
+                <img src="isotipo.png" alt="KORE">
+                <span>KORE <span class="acc">Studio</span></span><span class="tag">CEO</span>
+            </div>
+            <div class="pills">
+                <button class="pill iconbtn" id="btnRefresh" type="button" title="Actualizar" hidden><i class="fa-solid fa-rotate"></i></button>
+                <button class="pill iconbtn" id="btnTheme" type="button" title="Estética" hidden><i class="fa-solid fa-palette"></i></button>
+                <button class="pill" onclick="KORE.toggleMode()" type="button"><i id="mode-icon" class="fa-solid fa-moon"></i><span id="mode-text">Oscuro</span></button>
+                <button class="pill iconbtn" id="btnLogout" type="button" title="Cerrar sesión" hidden><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===================== LOGIN DE LA CEO ===================== -->
+    <main class="center" id="viewLogin" hidden>
+        <div class="wrap">
+            <section class="card">
+                <div class="step-head">
+                    <span class="badge"><i class="fa-solid fa-lock"></i></span>
+                    <div>
+                        <div class="eyebrow">Acceso exclusivo CEO</div>
+                        <h2>Panel de accesos</h2>
+                    </div>
+                </div>
+                <p class="lead">Inicia sesión para decidir quién puede entrar a KORE Studio.</p>
+                <form id="formLogin" novalidate>
+                    <label for="usuario">Usuario</label>
+                    <input type="text" id="usuario" placeholder="Tu usuario" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+                    <label for="password">Contraseña</label>
+                    <div class="pw">
+                        <input type="password" id="password" placeholder="Tu contraseña" autocomplete="current-password">
+                        <button type="button" class="eye" id="eye" aria-label="Mostrar contraseña"><i class="fa-regular fa-eye"></i></button>
+                    </div>
+                    <div class="box err" id="errLogin"></div>
+                    <button type="submit" class="btn" id="btnLogin">Entrar</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <!-- ===================== PANEL ===================== -->
+    <div class="container" id="viewPanel" hidden>
+        <section class="card">
+            <div class="step-head">
+                <span class="badge"><i class="fa-solid fa-chart-simple"></i></span>
+                <h2>Resumen</h2>
+            </div>
+            <div class="stats">
+                <div class="stat"><b id="nPend" style="color:#f59e0b">0</b><span>Pendientes</span></div>
+                <div class="stat"><b id="nOk" style="color:#10b981">0</b><span>Con acceso</span></div>
+                <div class="stat"><b id="nAll" style="color:var(--accent-light)">0</b><span>Registrados</span></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="step-head">
+                <span class="badge"><i class="fa-solid fa-users"></i></span>
+                <h2>Usuarios registrados</h2>
+            </div>
+            <div class="segment" style="margin-bottom:12px">
+                <button class="seg-btn active" data-filter="pending" type="button">Pendientes (0)</button>
+                <button class="seg-btn" data-filter="approved" type="button">Con acceso (0)</button>
+                <button class="seg-btn" data-filter="all" type="button">Todos (0)</button>
+            </div>
+            <input type="search" id="search" placeholder="Buscar por nombre o usuario" autocomplete="off">
+            <div class="box err" id="errList"></div>
+            <div class="users" id="users"></div>
+            <p class="note" style="margin-top:14px">Se actualiza sola cada 20 segundos.</p>
+        </section>
+    </div>
+
+    <!-- ===================== ESTÉTICA ===================== -->
+    <div class="modal" id="modalTheme" hidden>
+        <div class="card">
+            <div class="row-end" style="margin-bottom:8px">
+                <div class="step-head" style="margin:0"><span class="badge"><i class="fa-solid fa-palette"></i></span><h2>Estética del panel</h2></div>
+                <button class="pill iconbtn" id="closeTheme" type="button"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <label>Elige la paleta cromática</label>
+            <div class="themes" id="themeGrid"></div>
+        </div>
+    </div>
+
+    <script src="kore-core.js"></script>
+    <script>
+        KORE.applyTheme();
+        const acc = KORE.account('admin');
+        const $ = (id) => document.getElementById(id);
+        const esc = KORE.esc;
+
+        let users = [];
+        let filter = 'pending';
+        let known = null;       // para avisar de solicitudes nuevas
+        let busyUid = '';
+        let timer = null;
+
+        // ---------- utilidades de interfaz ----------
+        function toast(msg) {
+            const t = $('toast');
+            t.textContent = msg; t.classList.add('show');
+            clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2800);
+        }
+        const showBox = (el, text) => { el.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="margin-top:2px"></i><span></span>'; el.lastChild.textContent = text; el.classList.add('show'); };
+        const hideBox = (el) => el.classList.remove('show');
+        const fmtDate = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }); };
+        const strip = (s) => KORE.norm(s);
+        const label = (u) => u.name || '@' + u.username;
+
+        function showView(v) {
+            $('viewLogin').hidden = v !== 'login';
+            $('viewPanel').hidden = v !== 'panel';
+            ['btnRefresh', 'btnTheme', 'btnLogout'].forEach((id) => { $(id).hidden = v !== 'panel'; });
+        }
+
+        // ---------- sesión ----------
+        function logout(notice) {
+            acc.clear();
+            clearInterval(timer);
+            known = null; users = [];
+            showView('login');
+            if (notice) showBox($('errLogin'), notice);
+        }
+
+        $('eye').addEventListener('click', () => {
+            const i = $('password'); const show = i.type === 'password';
+            i.type = show ? 'text' : 'password';
+            $('eye').innerHTML = '<i class="fa-regular ' + (show ? 'fa-eye-slash' : 'fa-eye') + '"></i>';
+        });
+
+        $('formLogin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = $('btnLogin');
+            if (btn.disabled) return;
+            hideBox($('errLogin'));
+            if (!KORE.isConfigured()) return showBox($('errLogin'), 'Falta configurar la base de datos: pega tu apiKey y projectId en kore-core.js.');
+            const id = $('usuario').value.trim(); const pw = $('password').value;
+            if (!id || !pw) return showBox($('errLogin'), 'Escribe tu usuario y tu contraseña.');
+            btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+            try {
+                await acc.signIn(id, pw);
+                await loadUsers('initial');      // si la cuenta no es la de la CEO, la base de datos responde 403
+                if (acc.getSession()) { $('password').value = ''; startPanel(); }
+            } catch (err) {
+                acc.clear();
+                showBox($('errLogin'), err.status === 403 ? 'Esta cuenta no tiene permisos de administrador.' : KORE.friendlyError(err));
+            }
+            btn.disabled = false; btn.textContent = 'Entrar';
+        });
+
+        $('btnLogout').addEventListener('click', () => { if (confirm('¿Salir del panel de accesos?')) logout(''); });
+
+        // ---------- datos ----------
+        async function loadUsers(mode) {
+            try {
+                const list = await acc.listUsers();
+                if (known && mode === 'silent') {
+                    const fresh = list.filter((u) => !u.approved && !known.has(u.uid));
+                    if (fresh.length) toast(fresh.length === 1 ? 'Nueva solicitud: ' + label(fresh[0]) : fresh.length + ' nuevas solicitudes de acceso');
+                }
+                known = new Set(list.map((u) => u.uid));
+                users = list;
+                hideBox($('errList'));
+                render();
+            } catch (err) {
+                if (mode === 'initial') throw err;                       // lo maneja el login
+                if (err.status === 400 || err.status === 401) return logout('Tu sesión expiró. Inicia sesión de nuevo.');
+                if (err.status === 403) return logout('Esta cuenta no tiene permisos de administrador.');
+                if (mode !== 'silent') showBox($('errList'), KORE.friendlyError(err));
+            }
+        }
+
+        function startPanel() {
+            showView('panel');
+            render();
+            clearInterval(timer);
+            timer = setInterval(() => loadUsers('silent'), 20000);
+        }
+
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && acc.getSession()) loadUsers('silent'); });
+        $('btnRefresh').addEventListener('click', () => { loadUsers('manual'); toast('Actualizando...'); });
+
+        // ---------- render ----------
+        function render() {
+            const pend = users.filter((u) => !u.approved).length;
+            const ok = users.filter((u) => u.approved).length;
+            $('nPend').textContent = pend; $('nOk').textContent = ok; $('nAll').textContent = users.length;
+            const names = { pending: 'Pendientes (' + pend + ')', approved: 'Con acceso (' + ok + ')', all: 'Todos (' + users.length + ')' };
+            document.querySelectorAll('.seg-btn').forEach((b) => {
+                b.textContent = names[b.dataset.filter];
+                b.classList.toggle('active', b.dataset.filter === filter);
+            });
+
+            const q = strip($('search').value).replace(/^@/, '');
+            const visible = users
+                .filter((u) => filter === 'all' ? true : filter === 'approved' ? u.approved : !u.approved)
+                .filter((u) => !q || strip(u.name).includes(q) || u.username.includes(q))
+                .sort((a, b) => (Number(a.approved) - Number(b.approved)) || String(b.createdAt).localeCompare(String(a.createdAt)));
+
+            const empty = q ? 'Sin resultados para tu búsqueda.'
+                : filter === 'pending' ? 'No hay solicitudes pendientes.'
+                : filter === 'approved' ? 'Aún no has concedido acceso a nadie.' : 'Todavía no se registra nadie.';
+
+            $('users').innerHTML = visible.length ? visible.map((u) => `
+                <div class="user">
+                    <div class="avatar">${esc((u.name || u.username || '?').trim().charAt(0).toUpperCase())}</div>
+                    <div class="u-info">
+                        <div class="u-name">${esc(u.name || 'Sin nombre')}</div>
+                        <div class="u-user">@${esc(u.username)}</div>
+                        <div class="u-meta">
+                            <span class="st ${u.approved ? 'ok' : 'wait'}">${u.approved ? 'Con acceso' : 'Pendiente'}</span>
+                            ${u.createdAt ? '<span><i class="fa-regular fa-calendar"></i> ' + esc(fmtDate(u.createdAt)) + '</span>' : ''}
+                        </div>
+                    </div>
+                    <button class="act ${u.approved ? 'revoke' : 'grant'}" data-uid="${esc(u.uid)}" ${busyUid === u.uid ? 'disabled' : ''}>
+                        ${busyUid === u.uid ? '<span class="spin"></span>' : u.approved
+                            ? '<i class="fa-solid fa-ban"></i><span class="t">Revocar</span>'
+                            : '<i class="fa-solid fa-check"></i><span class="t">Conceder acceso</span>'}
+                    </button>
+                </div>`).join('') : '<div class="empty">' + empty + '</div>';
+        }
+
+        document.querySelectorAll('.seg-btn').forEach((b) => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
+        $('search').addEventListener('input', render);
+
+        // ---------- conceder / revocar ----------
+        $('users').addEventListener('click', async (e) => {
+            const btn = e.target.closest('.act');
+            if (!btn || btn.disabled) return;
+            const u = users.find((x) => x.uid === btn.dataset.uid);
+            if (!u) return;
+            const grant = !u.approved;
+            if (!grant && !confirm('¿Quitarle el acceso a ' + label(u) + '? Dejará de poder usar la agenda en cuanto se actualice su pantalla.')) return;
+            busyUid = u.uid; render();
+            try {
+                await acc.setAccess(u.uid, grant);
+                u.approved = grant;
+                toast(grant ? '✓ Acceso concedido a ' + label(u) : 'Acceso revocado a ' + label(u));
+            } catch (err) {
+                if (err.status === 401) return logout('Tu sesión expiró. Inicia sesión de nuevo.');
+                alert('No se pudo guardar: ' + KORE.friendlyError(err));
+            }
+            busyUid = ''; render();
+        });
+
+        // ---------- estética ----------
+        const grid = $('themeGrid');
+        const currentTheme = () => localStorage.getItem('kore_theme') || 'pink';
+        function drawThemes() {
+            grid.innerHTML = Object.entries(KORE.THEMES).map(([k, t]) => `
+                <button class="theme-btn ${currentTheme() === k ? 'on' : ''}" data-k="${k}" style="${currentTheme() === k ? 'border-color:' + t.accent : ''}" type="button">
+                    <span class="dot" style="background:${t.accent}"></span>${esc(t.name)}
+                </button>`).join('');
+        }
+        grid.addEventListener('click', (e) => { const b = e.target.closest('.theme-btn'); if (b) { KORE.setThemeKey(b.dataset.k); drawThemes(); } });
+        $('btnTheme').addEventListener('click', () => { drawThemes(); $('modalTheme').hidden = false; });
+        $('closeTheme').addEventListener('click', () => { $('modalTheme').hidden = true; });
+        $('modalTheme').addEventListener('click', (e) => { if (e.target === $('modalTheme')) $('modalTheme').hidden = true; });
+
+        // ---------- arranque ----------
+        (async function boot() {
+            if (!KORE.isConfigured() || !acc.getSession()) return showView('login');
+            showView('panel');                       // muestra el panel mientras carga
+            $('users').innerHTML = '<div class="empty"><span class="spin" style="border-color:var(--line);border-top-color:var(--accent);display:inline-block"></span></div>';
+            try { await loadUsers('initial'); startPanel(); }
+            catch (err) {
+                if (err.code === 'NETWORK') { startPanel(); showBox($('errList'), err.message); }
+                else logout(err.status === 403 ? 'Esta cuenta no tiene permisos de administrador.' : '');
+            }
+        })();
+    </script>
+</body>
+</html>
